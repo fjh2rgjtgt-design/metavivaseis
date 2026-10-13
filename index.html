@@ -57,7 +57,7 @@ main table,#rm table{display:block}main tbody,#rm tbody{display:block}
 .tot{font-size:18px}
 }
 </style></head><body>
-<header><h1>🚗 Μεταβιβάσεις Οχημάτων <small id="appVer" style="font-size:11px;font-weight:400;opacity:.6">v7</small></h1>
+<header><h1>🚗 Μεταβιβάσεις Οχημάτων <small id="appVer" style="font-size:11px;font-weight:400;opacity:.6">v8</small></h1>
 <button type="button" class="sec" id="menuBtn" onclick="this.parentNode.classList.toggle('open')">☰ Μενού</button>
 <div id="mbar"><input id="mq" type="search" placeholder="Αναζήτηση..." oninput="$('q').value=this.value;render()"><button type="button" class="sec" onclick="document.body.classList.toggle('showf')">Φίλτρα</button><button type="button" class="ok" onclick="openForm()">+ Νέα</button></div>
 <button type="button" class="hx ok" onclick="openForm()">+ Νέα καταχώρηση</button>
@@ -68,12 +68,12 @@ main table,#rm table{display:block}main tbody,#rm tbody{display:block}
 <button type="button" class="hx sec" id="bkImp" onclick="bkImport()">Εισαγωγή</button>
 <button type="button" class="hx sec" id="bkSync" onclick="bkSync()">Συγχρονισμός</button>
 <button type="button" class="hx sec" id="bkDl" onclick="bkSaveDl()">Λήψη αρχείου</button>
-<input type="file" id="bkFile" accept="application/json,.json" style="display:none" onchange="var f=this.files[0];this.value='';if(bkSyncMode){bkSyncMode=false;bkReadFile(f,bkSyncAfter)}else bkRead(f)">
+<input type="file" id="bkFile" accept=".json,application/json,text/plain,*/*" style="display:none" onchange="var inp=this,f=inp.files&&inp.files[0],done=function(){setTimeout(function(){inp.value=''},0)};if(bkSyncMode){bkSyncMode=false;bkReadFile(f,function(p){done();bkSyncAfter(p)})}else bkReadFile(f,done)">
 <button type="button" class="hx" onclick="openReport()">Ανά συνεργάτη</button>
 <button type="button" class="hx sec" onclick="openSettings()">Ρυθμίσεις</button>
 <span id="store" style="background:#fff;color:#1f4e79;padding:6px 12px;border-radius:16px;font-weight:700;font-size:15px">Αποθήκευση: Browser</span>
 <span id="fstat"></span>
-<input type="file" id="imp" accept=".json,application/json" style="display:none" onchange="importFile(this)">
+<input type="file" id="imp" accept=".json,application/json,text/plain,*/*" style="display:none" onchange="var inp=this;bkReadFile(inp.files&&inp.files[0],function(){setTimeout(function(){inp.value=''},0)})">
 </header>
 <main>
 <div class="card grid filt">
@@ -378,16 +378,23 @@ if(!db.partners)db.partners=[];var ps=inc.partners||[];for(i=0;i<ps.length;i++){
 function mvValid(d){if(!d||typeof d!=="object"||!d.records||Object.prototype.toString.call(d.records)!=="[object Array]")return false;for(var i=0;i<d.records.length;i++)if(!d.records[i]||typeof d.records[i]!=="object")return false;return true}
 function mvConfirmText(p){return "Θα προστεθούν "+p.add+" νέες και θα ενημερωθούν "+p.upd+" υπάρχουσες εγγραφές. Καμία δεν θα διαγραφεί. Συνέχεια;"}
 function mvDoneText(p){return "Ολοκληρώθηκε: "+p.add+" νέες, "+p.upd+" ενημερώθηκαν. Σύνολο "+db.records.length+" εγγραφές."}
-function bkReadFile(f,cb){if(!f){cb&&cb(null);return}f.text().then(function(t){var d=JSON.parse(t);
-if(!mvValid(d))throw new Error("Το αρχείο δεν είναι αντίγραφο της εφαρμογής");
+function bkTextOf(f){function fr(){return new Promise(function(res,rej){try{var r=new FileReader();r.onload=function(){res(String(r.result||""))};r.onerror=function(){rej(r.error||new Error("FileReader"))};r.readAsText(f,"utf-8")}catch(e){rej(e)}})}
+var p=(f.text?f.text():Promise.reject(new Error("no text()")));return p.then(function(t){return t?t:fr()},function(e){console.warn("file.text() failed",e);return fr()})}
+function bkParse(t){t=String(t).replace(/^\uFEFF/,"").replace(/\u0000/g,"").trim();
+var m=/^(?:window\.)?[\w$.]+\s*=\s*/.exec(t)||/^(?:var|let|const)\s+[\w$]+\s*=\s*/.exec(t);if(m){t=t.slice(m[0].length).replace(/;\s*$/,"").trim()}
+var d=JSON.parse(t);if(Array.isArray(d))d={records:d};if(d&&!d.records&&d.db&&d.db.records)d=d.db;return d}
+function bkReadFile(f,cb){if(!f){cb&&cb(null);return}var info=" ["+(f.name||"?")+", "+(f.size==null?"?":f.size)+" bytes, type '"+(f.type||"")+"']";
+bkTextOf(f).then(function(t){if(!t||!t.replace(/[\s\u0000\uFEFF]/g,"")){var e=new Error("Το αρχείο δεν έχει κατέβει ακόμα από το OneDrive — ανοίξτε το μία φορά στα Αρχεία και ξαναδοκιμάστε");e.mvEmpty=1;throw e}
+var d;try{d=bkParse(t)}catch(e){e.message=(e.message||"")+" | διαβάστηκαν "+t.length+" χαρ., αρχή: «"+t.slice(0,40).replace(/\s+/g," ")+"»";throw e}
+if(!mvValid(d))throw new Error("Το αρχείο δεν είναι αντίγραφο της εφαρμογής | αρχή: «"+t.slice(0,40).replace(/\s+/g," ")+"»");
 var p=mvPlan(db,d);if(!confirm(mvConfirmText(p))){cb&&cb(null);return}
 mvSafety();mvApply(d,p);migrate();persist();try{fillSelects()}catch(e){}render();bkMsg(mvDoneText(p),1);cb&&cb(p)})
-.catch(function(e){bkMsg("Σφάλμα εισαγωγής: "+((e&&e.message)||"μη έγκυρο αρχείο"),0);cb&&cb(null)})}
+.catch(function(e){console.error("import error",e,info);bkMsg(e&&e.mvEmpty?e.message:"Σφάλμα εισαγωγής: "+((e&&e.name)||"")+" "+((e&&e.message)||e)+info,0);cb&&cb(null)})}
 function bkRead(f){bkReadFile(f)}
 var bkSyncMode=false;
 function bkSync(){if(window.showOpenFilePicker){showOpenFilePicker({types:[{description:"JSON",accept:{"application/json":[".json"]}}]}).then(function(h){return h[0].getFile()}).then(function(f){bkReadFile(f,bkSyncAfter)},function(){bkSyncAfter()});return}
 bkSyncMode=true;var inp=document.getElementById("bkFile");
-var onfocus=function(){window.removeEventListener("focus",onfocus);setTimeout(function(){if(bkSyncMode){bkSyncMode=false;bkSyncAfter()}},1500)};
+var onfocus=function(){window.removeEventListener("focus",onfocus);setTimeout(function(){if(bkSyncMode&&!(inp.files&&inp.files.length)){bkSyncMode=false;bkSyncAfter()}},3000)};
 window.addEventListener("focus",onfocus);inp.click()}
 function bkSyncAfter(){var sh=false;try{sh=!!(navigator.share&&navigator.canShare)}catch(e){}
 if(!sh){try{bkExport();return}catch(e){}}
