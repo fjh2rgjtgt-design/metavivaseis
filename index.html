@@ -69,12 +69,9 @@ main table,#rm table{display:block}main tbody,#rm tbody{display:block}
 <button type="button" class="hx sec" id="bkSync" onclick="bkSync()">Συγχρονισμός</button>
 <button type="button" class="hx sec" id="bkDl" onclick="bkDownload()">Λήψη αρχείου</button>
 <input type="file" id="bkFile" accept="application/json,.json" style="display:none" onchange="var f=this.files[0];this.value='';if(bkSyncMode){bkSyncMode=false;bkReadFile(f,bkSyncAfter)}else bkRead(f)">
-<button type="button" class="sec hx" id="linkBtn" style="display:none" onclick="linkFile()">Σύνδεση με αρχείο</button>
-<button type="button" class="hx" id="odBtn" style="background:#0078d4">Σύνδεση OneDrive</button>
 <button type="button" class="hx" onclick="openReport()">Ανά συνεργάτη</button>
 <button type="button" class="hx sec" onclick="openSettings()">Ρυθμίσεις</button>
 <span id="store" style="background:#fff;color:#1f4e79;padding:6px 12px;border-radius:16px;font-weight:700;font-size:15px">Αποθήκευση: Browser</span>
-<button type="button" class="sec hx" id="dirBtn" style="display:none" onclick="pickDir()">Σύνδεση με φάκελο</button>
 <span id="fstat"></span>
 <input type="file" id="imp" accept=".json,application/json" style="display:none" onchange="importFile(this)">
 </header>
@@ -290,12 +287,12 @@ function usbSave(){if(dirH){clearTimeout(usbT);usbT=setTimeout(writeUSB,300);ret
 }
 async function pickDir(){try{const h=await window.showDirectoryPicker({id:"metavivaseis",mode:"readwrite"});
 if((await h.requestPermission({mode:"readwrite"}))!="granted")return alert("Δεν δόθηκε άδεια εγγραφής.");await connect(h)}catch(e){if(e.name!="AbortError")alert("Σφάλμα: "+e.message)}}
-async function initUSB(){setStore();if(!window.showDirectoryPicker||!window.indexedDB)return;$("dirBtn").style.display="";
+async function initUSB(){setStore();if(!window.showDirectoryPicker||!window.indexedDB)return;if($("dirBtn"))$("dirBtn").style.display="";
 let h=null;try{h=await idbGet("dir")}catch(e){}if(!h)return;
 let p="prompt";try{p=await h.queryPermission({mode:"readwrite"})}catch(e){}
 if(p=="granted")await connect(h)}
 
-load();if(window.showSaveFilePicker)$("linkBtn").style.display="";fillSelects();render();initUSB();
+load();if(window.showSaveFilePicker&&$("linkBtn"))$("linkBtn").style.display="";fillSelects();render();initUSB();
 /* ===== OneDrive αποθήκευση (Microsoft Graph, φάκελος εφαρμογής /Apps/Metavivaseis) ===== */
 const CLIENT_ID="ΒΑΛΤΕ-ΕΔΩ-ΤΟ-APPLICATION-CLIENT-ID";   // ← από το Azure (βλ. ONEDRIVE_SETUP.txt)
 const OD_ON=/^[0-9a-f-]{36}$/i.test(CLIENT_ID)&&typeof msal!="undefined"&&location.protocol=="https:";
@@ -330,7 +327,7 @@ async function odPush(create){if(odBusy){odAgain=true;return}odBusy=true;try{odC
  catch(e){localStorage.setItem("od_pending","1");odChip(navigator.onLine?"err":"off",String(e.message||e));console.warn(e)}
  finally{odBusy=false;if(odAgain){odAgain=false;odPush()}}}
 window.odSave=function(){if(!odAcc)return;localStorage.setItem("od_pending","1");clearTimeout(odTimer);odTimer=setTimeout(()=>odPush(),800)};
-async function odInit(){const b=$("odBtn");if(!OD_ON){b.title="Χρειάζεται https + CLIENT_ID (βλ. ONEDRIVE_SETUP.txt)";b.onclick=()=>alert("Η σύνδεση OneDrive δεν έχει ρυθμιστεί ακόμα.\nΧρειάζεται: σελίδα σε https και CLIENT_ID από το Azure (ONEDRIVE_SETUP.txt).");return}
+async function odInit(){const b=$("odBtn");if(!b)return;if(!OD_ON){b.title="Χρειάζεται https + CLIENT_ID (βλ. ONEDRIVE_SETUP.txt)";b.onclick=()=>alert("Η σύνδεση OneDrive δεν έχει ρυθμιστεί ακόμα.\nΧρειάζεται: σελίδα σε https και CLIENT_ID από το Azure (ONEDRIVE_SETUP.txt).");return}
  odApp=new msal.PublicClientApplication({auth:{clientId:CLIENT_ID,authority:"https://login.microsoftonline.com/common",redirectUri:location.origin+location.pathname},cache:{cacheLocation:"localStorage"}});
  await odApp.initialize();const res=await odApp.handleRedirectPromise().catch(e=>{odChip("err",e.message);return null});
  odAcc=(res&&res.account)||odApp.getAllAccounts()[0]||null;
