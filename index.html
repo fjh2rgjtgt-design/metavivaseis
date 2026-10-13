@@ -66,8 +66,9 @@ main table,#rm table{display:block}main tbody,#rm tbody{display:block}
 <button type="button" class="hx sec" onclick="exportCSV()">Εξαγωγή Excel (CSV)</button>
 <button type="button" class="hx sec" id="bkExp" onclick="bkExport()">Εξαγωγή</button>
 <button type="button" class="hx sec" id="bkImp" onclick="bkImport()">Εισαγωγή</button>
+<button type="button" class="hx sec" id="bkSync" onclick="bkSync()">Συγχρονισμός</button>
 <button type="button" class="hx sec" id="bkDl" onclick="bkDownload()">Λήψη αρχείου</button>
-<input type="file" id="bkFile" accept="application/json,.json" style="display:none" onchange="bkRead(this.files[0]);this.value=''">
+<input type="file" id="bkFile" accept="application/json,.json" style="display:none" onchange="var f=this.files[0];this.value='';if(bkSyncMode){bkSyncMode=false;bkReadFile(f,bkSyncAfter)}else bkRead(f)">
 <button type="button" class="sec hx" id="linkBtn" style="display:none" onclick="linkFile()">Σύνδεση με αρχείο</button>
 <button type="button" class="hx" id="odBtn" style="background:#0078d4">Σύνδεση OneDrive</button>
 <button type="button" class="hx" onclick="openReport()">Ανά συνεργάτη</button>
@@ -259,8 +260,8 @@ function addPartner(){const p=$("newp").value.trim();if(p&&!db.partners.includes
 function rmPartner(i){if(confirm("Αφαίρεση από τη λίστα; (οι παλιές καταχωρήσεις μένουν)")){db.partners.splice(i,1);persist();fillSelects();render();openSettings()}}
 function download(name,data,type){const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([data],{type}));a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},500)}
 function saveFile(){download("metavivaseis_"+today()+".json",JSON.stringify(db,null,2),"application/json")}
-function importFile(inp){const f=inp.files[0];if(!f)return;f.text().then(t=>{const d=JSON.parse(t);if(!d.records)throw 0;
-if(confirm("Αντικατάσταση των τρεχόντων δεδομένων με το αρχείο ("+d.records.length+" καταχωρήσεις);")){db=d;if(!db.partners)db.partners=DEFP.slice();persist();fillSelects();render()}}).catch(()=>alert("Μη έγκυρο αρχείο."));inp.value=""}
+function importFile(inp){const f=inp.files[0];if(!f)return;f.text().then(t=>{const d=JSON.parse(t);if(!mvValid(d))throw 0;
+const p=mvPlan(db,d);if(confirm(mvConfirmText(p))){mvSafety();mvApply(d,p);migrate();persist();fillSelects();render();alert(mvDoneText(p))}}).catch(()=>alert("Μη έγκυρο αρχείο."));inp.value=""}
 function exportCSV(){const H=["Ημερομηνία","Πινακίδα","Τύπος οχήματος","Τύπος εργασίας","Συνεργάτης","Αγοραστής","ΑΦΜ","Διεύθυνση","Τηλέφωνο","Bonus (€)","Ποσό για παράβολα (€)","Κατάσταση","Παρατηρήσεις"];
 const q=s=>'"'+String(s??"").replace(/"/g,'""')+'"';
 const rows=filtered().map(r=>[fdate(r.date),r.plate,r.type,r.job,r.partner,r.name,r.afm,r.addr,r.phone,String(r.bonus||"").replace(".",","),String(r.amount||"").replace(".",","),r.status,r.notes].map(q).join(";"));
@@ -359,10 +360,39 @@ if(window.showSaveFilePicker){showSaveFilePicker({suggestedName:name,types:[{des
 bkDownload(txt,name)}
 async function bkImport(){if(window.showOpenFilePicker){try{var hs=await showOpenFilePicker({types:[{description:"JSON",accept:{"application/json":[".json"]}}]});bkRead(await hs[0].getFile())}catch(e){if(e&&e.name!=="AbortError")bkMsg("Σφάλμα εισαγωγής: "+(e.message||e),0)}return}
 document.getElementById("bkFile").click()}
-async function bkRead(f){if(!f)return;try{var d=JSON.parse(await f.text());
-if(!d||typeof d!=="object"||!Array.isArray(d.records)||!d.records.every(function(r){return r&&typeof r==="object"}))throw new Error("Το αρχείο δεν είναι αντίγραφο της εφαρμογής");
-if(!confirm("Να αντικατασταθούν τα τρέχοντα δεδομένα με "+d.records.length+" εγγραφές από το αρχείο;"))return;
-if(!Array.isArray(d.partners))d.partners=DEFP.slice();db=d;migrate();persist();render();bkMsg("Φορτώθηκαν "+d.records.length+" εγγραφές",1)}
-catch(e){bkMsg("Σφάλμα εισαγωγής: "+(e.message||"μη έγκυρο αρχείο"),0)}}
+function mvKey(r){return [String(r.plate||"").replace(/\s+/g,"").toUpperCase(),String(r.date||""),String(r.job||"")].join("|")}
+function mvPlan(cur,inc){var byId={},byKey={},ids={},i,r,m,add=0,upd=0,ops=[];
+for(i=0;i<cur.records.length;i++){r=cur.records[i];if(r.id!=null&&r.id!==""){byId[String(r.id)]=r;ids[String(r.id)]=1}byKey[mvKey(r)]=byKey[mvKey(r)]||r}
+for(i=0;i<inc.records.length;i++){r=inc.records[i];m=null;
+if(r.id!=null&&r.id!==""&&byId[String(r.id)])m=byId[String(r.id)];else if(r.id==null||r.id===""){m=byKey[mvKey(r)]||null}
+if(m){upd++;ops.push({t:"u",r:r,m:m})}else{add++;ops.push({t:"a",r:r})}}
+return {add:add,upd:upd,ops:ops,ids:ids}}
+function mvSafety(){var s=JSON.stringify({savedAt:new Date().toISOString(),db:db});try{localStorage.setItem("metavivaseis_prev_backup",s);return true}catch(e){return false}}
+function mvApply(inc,p){var i,o,k,nid;
+for(i=0;i<p.ops.length;i++){o=p.ops[i];
+if(o.t=="u"){for(k in o.r)if(Object.prototype.hasOwnProperty.call(o.r,k)&&k!="id")o.m[k]=o.r[k]}
+else{var c=JSON.parse(JSON.stringify(o.r));if(c.id==null||c.id===""||p.ids[String(c.id)]){do{nid="imp"+new Date().getTime().toString(36)+Math.random().toString(36).slice(2,8)}while(p.ids[nid]);c.id=nid}p.ids[String(c.id)]=1;db.records.push(c)}}
+if(!db.partners)db.partners=[];var ps=inc.partners||[];for(i=0;i<ps.length;i++){var have=false;for(k=0;k<db.partners.length;k++)if(db.partners[k]===ps[i])have=true;if(!have)db.partners.push(ps[i])}}
+function mvValid(d){if(!d||typeof d!=="object"||!d.records||Object.prototype.toString.call(d.records)!=="[object Array]")return false;for(var i=0;i<d.records.length;i++)if(!d.records[i]||typeof d.records[i]!=="object")return false;return true}
+function mvConfirmText(p){return "Θα προστεθούν "+p.add+" νέες και θα ενημερωθούν "+p.upd+" υπάρχουσες εγγραφές. Καμία δεν θα διαγραφεί. Συνέχεια;"}
+function mvDoneText(p){return "Ολοκληρώθηκε: "+p.add+" νέες, "+p.upd+" ενημερώθηκαν. Σύνολο "+db.records.length+" εγγραφές."}
+function bkReadFile(f,cb){if(!f){cb&&cb(null);return}f.text().then(function(t){var d=JSON.parse(t);
+if(!mvValid(d))throw new Error("Το αρχείο δεν είναι αντίγραφο της εφαρμογής");
+var p=mvPlan(db,d);if(!confirm(mvConfirmText(p))){cb&&cb(null);return}
+mvSafety();mvApply(d,p);migrate();persist();try{fillSelects()}catch(e){}render();bkMsg(mvDoneText(p),1);cb&&cb(p)})
+.catch(function(e){bkMsg("Σφάλμα εισαγωγής: "+((e&&e.message)||"μη έγκυρο αρχείο"),0);cb&&cb(null)})}
+function bkRead(f){bkReadFile(f)}
+var bkSyncMode=false;
+function bkSync(){if(window.showOpenFilePicker){showOpenFilePicker({types:[{description:"JSON",accept:{"application/json":[".json"]}}]}).then(function(h){return h[0].getFile()}).then(function(f){bkReadFile(f,bkSyncAfter)},function(){bkSyncAfter()});return}
+bkSyncMode=true;var inp=document.getElementById("bkFile");
+var onfocus=function(){window.removeEventListener("focus",onfocus);setTimeout(function(){if(bkSyncMode){bkSyncMode=false;bkSyncAfter()}},1500)};
+window.addEventListener("focus",onfocus);inp.click()}
+function bkSyncAfter(){var sh=false;try{sh=!!(navigator.share&&navigator.canShare)}catch(e){}
+if(!sh){try{bkExport();return}catch(e){}}
+bkPrompt()}
+function bkPrompt(){var o=document.getElementById("bkPr");if(o)o.remove();o=document.createElement("div");o.id="bkPr";
+o.style.cssText="position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:99999;background:#1f4e79;color:#fff;padding:12px 16px;border-radius:10px;display:flex;gap:10px;align-items:center;max-width:92%";
+o.innerHTML='<span>Έτοιμο για αντίγραφο.</span><button type="button" class="ok" id="bkPrBtn">Αποστολή αντιγράφου</button><button type="button" class="sec" id="bkPrX">✕</button>';
+document.body.appendChild(o);document.getElementById("bkPrBtn").onclick=function(){o.remove();bkExport()};document.getElementById("bkPrX").onclick=function(){o.remove()}}
 </script>
 </body></html>
