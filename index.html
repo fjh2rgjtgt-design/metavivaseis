@@ -66,6 +66,7 @@ main table,#rm table{display:block}main tbody,#rm tbody{display:block}
 <button type="button" class="hx sec" onclick="exportCSV()">Εξαγωγή Excel (CSV)</button>
 <button type="button" class="hx sec" id="bkExp" onclick="bkExport()">Εξαγωγή</button>
 <button type="button" class="hx sec" id="bkImp" onclick="bkImport()">Εισαγωγή</button>
+<button type="button" class="hx sec" id="bkDl" onclick="bkDownload()">Λήψη αρχείου</button>
 <input type="file" id="bkFile" accept="application/json,.json" style="display:none" onchange="bkRead(this.files[0]);this.value=''">
 <button type="button" class="sec hx" id="linkBtn" style="display:none" onclick="linkFile()">Σύνδεση με αρχείο</button>
 <button type="button" class="hx" id="odBtn" style="background:#0078d4">Σύνδεση OneDrive</button>
@@ -343,12 +344,19 @@ odInit();
 
 </script><script>
 function bkMsg(t,ok){var d=document.createElement("div");d.textContent=t;d.style.cssText="position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:99999;padding:12px 18px;border-radius:10px;color:#fff;font-weight:700;max-width:90%;text-align:center;background:"+(ok?"#2e7d32":"#c62828");document.body.appendChild(d);setTimeout(function(){d.remove()},3500)}
-async function bkExport(){var name="metavivaseis_backup_"+new Date().toISOString().slice(0,10)+".json",txt=JSON.stringify(db,null,2),blob=new Blob([txt],{type:"application/json"});
-try{var file=null;try{file=new File([blob],name,{type:"application/json"})}catch(e){}
-if(file&&navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],title:"Metavivaseis"});bkMsg("Η εξαγωγή ολοκληρώθηκε",1);return}
-if(window.showSaveFilePicker){var h=await showSaveFilePicker({suggestedName:name,types:[{description:"JSON",accept:{"application/json":[".json"]}}]});var w=await h.createWritable();await w.write(blob);await w.close();bkMsg("Η εξαγωγή ολοκληρώθηκε",1);return}
-var u=URL.createObjectURL(blob),a=document.createElement("a");a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(u)},4000);bkMsg("Η εξαγωγή ολοκληρώθηκε",1)}
-catch(e){if(e&&e.name==="AbortError")return;bkMsg("Σφάλμα εξαγωγής: "+(e.message||e),0)}}
+function bkName(){return "metavivaseis_backup_"+new Date().toISOString().slice(0,10)+".json"}
+function bkIOS(){return /iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1)}
+function bkDownload(txt,name){try{var blob=new Blob([txt||JSON.stringify(db,null,2)],{type:"application/json"}),u=URL.createObjectURL(blob);name=name||bkName();
+var w=null;if(bkIOS())w=window.open(u,"_blank");
+if(!w){var a=document.createElement("a");a.href=u;a.download=name;a.rel="noopener";document.body.appendChild(a);a.click();a.remove()}
+setTimeout(function(){URL.revokeObjectURL(u)},60000);bkMsg("Η λήψη ξεκίνησε",1)}catch(e){bkMsg("Σφάλμα λήψης: "+(e.message||e),0)}}
+function bkExport(){var name=bkName(),txt=JSON.stringify(db,null,2),file=null;
+try{if(typeof File==="function"&&navigator.canShare&&navigator.share){var f1=new File([txt],name,{type:"application/json"});
+if(navigator.canShare({files:[f1]}))file=f1;else{var f2=new File([txt],name,{type:"text/plain"});if(navigator.canShare({files:[f2]}))file=f2}}}catch(e){file=null}
+if(file){var pr;try{pr=navigator.share({files:[file]})}catch(e){if(e&&e.name==="AbortError")return;bkDownload(txt,name);return}
+Promise.resolve(pr).then(function(){bkMsg("Η εξαγωγή ολοκληρώθηκε",1)},function(e){if(e&&e.name==="AbortError")return;bkDownload(txt,name)});return}
+if(window.showSaveFilePicker){showSaveFilePicker({suggestedName:name,types:[{description:"JSON",accept:{"application/json":[".json"]}}]}).then(function(h){return h.createWritable().then(function(w){return w.write(new Blob([txt],{type:"application/json"})).then(function(){return w.close()})})}).then(function(){bkMsg("Η εξαγωγή ολοκληρώθηκε",1)},function(e){if(e&&e.name==="AbortError")return;bkDownload(txt,name)});return}
+bkDownload(txt,name)}
 async function bkImport(){if(window.showOpenFilePicker){try{var hs=await showOpenFilePicker({types:[{description:"JSON",accept:{"application/json":[".json"]}}]});bkRead(await hs[0].getFile())}catch(e){if(e&&e.name!=="AbortError")bkMsg("Σφάλμα εισαγωγής: "+(e.message||e),0)}return}
 document.getElementById("bkFile").click()}
 async function bkRead(f){if(!f)return;try{var d=JSON.parse(await f.text());
