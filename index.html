@@ -18,6 +18,10 @@ th{background:#e6edf5}tr:hover{background:#f6f9fc}
 .tot{font-size:20px;font-weight:700}
 .modal{position:fixed;top:0;left:0;right:0;bottom:0;background:#0007;display:none;align-items:flex-start;justify-content:center;overflow:auto;z-index:9}
 .modal .card{max-width:800px;width:95%;margin:20px auto}
+.modal{overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;height:100vh;height:100dvh;max-height:100dvh}
+body.mlock{overflow:hidden;position:fixed;left:0;right:0;width:100%}
+#xm .xn{display:none;font-size:13px;color:#666;background:#f5f5f5;border-radius:6px;padding:6px;margin-top:4px;white-space:pre-wrap}#xm .xn.on{display:block}
+#xm .xi{background:none;color:#1f4e79;padding:0 6px;min-height:0;font-size:15px}
 .hist{font-size:15px;background:#f8f8f8;padding:8px;border-radius:6px;max-height:250px;overflow:auto}
 #fstat{font-size:15px}
 button,input,select{min-height:44px}
@@ -54,10 +58,16 @@ main table,#rm table{display:block}main tbody,#rm tbody{display:block}
 #list td:empty{display:none}
 .modal .card{width:100%;max-width:none;min-height:100%;margin:0;border-radius:0;box-sizing:border-box;padding-bottom:40px}
 .modal{align-items:stretch}
+.modal .card .card,#xform{min-height:0!important;padding-bottom:10px}
+#xm table,#xm tbody{display:block}#xm thead{display:none}
+#xlist tr{display:block;background:#fff;border:1px solid #d5dbe3;border-radius:10px;margin:0 0 10px;padding:8px 10px}
+#xlist td{display:block;border:0;padding:3px 0}#xlist td[data-label]:before{content:attr(data-label) ": ";color:#667;font-size:14px}
+#xlist td:empty{display:none}#xlist td.act{display:flex;flex-wrap:wrap;gap:6px;white-space:normal}#xlist td.act button{flex:1}
+#xm code{word-break:break-all}
 .tot{font-size:18px}
 }
 </style></head><body>
-<header><h1>🚗 Μεταβιβάσεις Οχημάτων <small id="appVer" style="font-size:11px;font-weight:400;opacity:.6">v15</small></h1>
+<header><h1>🚗 Μεταβιβάσεις Οχημάτων <small id="appVer" style="font-size:11px;font-weight:400;opacity:.6">v16</small></h1>
 <button type="button" class="sec" id="menuBtn" onclick="this.parentNode.classList.toggle('open')">☰ Μενού</button>
 <div id="mbar"><input id="mq" type="search" placeholder="Αναζήτηση..." oninput="$('q').value=this.value;render()"><button type="button" class="sec" onclick="document.body.classList.toggle('showf')">Φίλτρα</button><button type="button" class="ok" onclick="openForm()">+ Νέα</button></div>
 <button type="button" class="hx ok" onclick="openForm()">+ Νέα καταχώρηση</button>
@@ -122,7 +132,7 @@ main table,#rm table{display:block}main tbody,#rm tbody{display:block}
 <div><label>Ιδιοκτήτης</label><select id="xfo" onchange="renderBills()"><option value="">Όλοι</option></select></div>
 <div><label>Κατάσταση</label><select id="xfs" onchange="renderBills()"><option value="">Όλα</option><option value="unpaid">Ανέξοφλα</option><option value="overdue">Ληξιπρόθεσμα</option><option value="paid">Πληρωμένα</option></select></div>
 <div><label>Από</label><input type="date" id="xd1" onchange="renderBills()"></div><div><label>Έως</label><input type="date" id="xd2" onchange="renderBills()"></div>
-<div><button type="button" class="ok" onclick="gxEditForm()">+ Νέο έξοδο</button> <button type="button" class="sec" onclick="closeM('xm');openSettings()">Ενοίκιο (κανόνας)</button></div></div>
+<div><button type="button" class="ok" onclick="gxEditForm()">+ Νέο έξοδο</button> <button type="button" class="sec" onclick="window.__xRet={top:$('xm').scrollTop};$('xm').style.display='none';openSettings()">Ενοίκιο (κανόνας)</button></div></div>
 <p id="xtot" style="font-weight:700;font-size:17px"></p>
 <div id="xform" class="card" style="display:none;background:#f5f7fa"><h3 id="xftitle"></h3><div class="grid">
 <div><label>Ημερομηνία</label><input type="date" id="x_date"></div><div><label>Ποσό (€) *</label><input type="number" step="0.01" id="x_amount"></div>
@@ -131,7 +141,7 @@ main table,#rm table{display:block}main tbody,#rm tbody{display:block}
 <div><label>Κωδικός πληρωμής (RF)</label><input id="x_rf"></div><div><label>Περιγραφή</label><input id="x_label"></div><div><label>Σημειώσεις</label><input id="x_notes"></div>
 <div><label><input type="checkbox" id="x_paid" style="width:auto"> Πληρωμένο</label></div><div><label>Ημ. πληρωμής</label><input type="date" id="x_paidDate"></div></div>
 <p><button type="button" class="ok" onclick="gxSaveForm()">Αποθήκευση</button> <button type="button" class="sec" onclick="$('xform').style.display='none'">Ακύρωση</button></p></div>
-<div style="overflow:auto"><table><thead><tr><th>Ημ/νία</th><th>Πάροχος / Περιγραφή</th><th>Ιδιοκτήτης</th><th>Κατηγορία</th><th>Ποσό</th><th>Έκδοση</th><th>Λήξη</th><th>RF</th><th>Κατάσταση</th><th></th></tr></thead><tbody id="xlist"></tbody></table></div>
+<div style="overflow:auto"><table><thead><tr><th>Ημ/νία</th><th>Περιγραφή</th><th>Ιδιοκτήτης</th><th>Κατηγορία</th><th>Ποσό</th><th>Έκδοση</th><th>Λήξη</th><th>RF</th><th>Κατάσταση</th><th></th></tr></thead><tbody id="xlist"></tbody></table></div>
 <p><button type="button" class="sec" onclick="closeM('xm')">Κλείσιμο</button></p></div></div>
 <div class="modal" id="sm"><div class="card"><h2>Ρυθμίσεις – Συνεργάτες</h2>
 <div id="plist"></div><label>Νέος συνεργάτης</label><input id="newp">
@@ -252,7 +262,7 @@ F.forEach(k=>$("f_"+k).value=cur?(cur[k]??""):"");if(!cur){$("f_date").value=tod
 $("ftitle").textContent=cur?"Επεξεργασία "+cur.plate:"Νέα καταχώρηση";$("delBtn").style.display=cur?"":"none";
 $("histBox").innerHTML=cur?"<h3>Ιστορικό</h3><div class='hist'>"+cur.history.slice().reverse().map(h=>`<div><b>${esc(h.at)}</b> – ${esc(h.action)}${h.changes?"<ul>"+h.changes.map(c=>`<li>${esc(LABELS[c.f]||c.f)}: «${esc(c.from)}» → «${esc(c.to)}»</li>`).join("")+"</ul>":""}</div>`).join("")+"</div>":"";
 formErr("");$("fm").style.display="flex"}
-function closeM(m){$(m).style.display="none"}
+function closeM(m){const was=$(m).style.display;$(m).style.display="none";if(m=="sm"&&window.__xRet&&was&&was!="none"){const t=__xRet.top;window.__xRet=null;openBills();$("xm").scrollTop=t}}
 function formErr(m){const e=$("formErr");e.textContent=m||"";e.style.display=m?"":"none"}
 function saveRec(){try{saveRec0()}catch(e){formErr("Σφάλμα αποθήκευσης: "+(e.message||e))}return false}
 function saveRec0(){formErr("");const v={};F.forEach(k=>v[k]=$("f_"+k).value.trim());v.plate=v.plate.toUpperCase();v.amount=v.amount===""?"":String(+v.amount);v.bonus=v.bonus===""?"":String(+v.bonus);v.expenses=v.expenses===""?"":String(+v.expenses);
@@ -281,7 +291,7 @@ function billsFiltered(){const c=$("xfc").value,o=$("xfo").value,st=$("xfs").val
 return (db.generalExpenses||[]).map(gxNorm).filter(e=>(!c||e.category==c)&&(!o||e.owner==o)&&(!st||(st=="paid"?e.paid:st=="unpaid"?!e.paid:(!e.paid&&e.dueDate&&e.dueDate<today())))&&(!d1||(e.date||"")>=d1)&&(!d2||(e.date||"")<=d2))
 .sort((a,b)=>(b.dueDate||b.date||"").localeCompare(a.dueDate||a.date||""))}
 function renderBills(){const L=billsFiltered(),sum=a=>a.reduce((t,e)=>t+(+e.amount||0),0);
-$("xlist").innerHTML=L.map(e=>{const s=gxStatus(e);return `<tr><td data-label="Ημ/νία">${fdate(e.date)}</td><td data-label="Πάροχος"><b>${esc(e.provider)}</b><div style="font-size:13px;color:#666">${esc(e.label)}${e.auto?" (αυτόματο)":""}</div>${e.notes?`<div style="font-size:12px;color:#888">${esc(e.notes)}</div>`:""}</td><td data-label="Ιδιοκτήτης">${esc(e.owner)}</td><td data-label="Κατηγορία">${esc(e.category)}</td><td data-label="Ποσό"><b>${eur(e.amount)}</b></td><td data-label="Έκδοση">${fdate(e.issueDate)}</td><td data-label="Λήξη">${fdate(e.dueDate)}</td><td data-label="RF">${e.rf?`<code style="font-size:13px">${esc(e.rf)}</code> <button type="button" class="sec" onclick="gxCopy('${esc(e.rf)}')">Αντιγραφή</button>`:""}</td><td data-label="Κατάσταση"><span class="st" style="background:${s[1]};color:#fff">${s[0]}</span>${e.paid&&e.paidDate?`<div style="font-size:12px">${fdate(e.paidDate)}</div>`:""}</td><td class="act">${e.paid?"":`<button type="button" class="ok" onclick="gxPaid('${esc(e.id)}')">Πληρώθηκε</button>`}<button type="button" class="sec" onclick="gxEditForm('${esc(e.id)}')">Επεξεργασία</button><button type="button" class="del" onclick="gxDel('${esc(e.id)}')">Διαγραφή</button></td></tr>`}).join("")||'<tr><td colspan="10">Δεν υπάρχουν έξοδα.</td></tr>';
+$("xlist").innerHTML=L.map(e=>{const s=gxStatus(e);return `<tr><td data-label="Ημ/νία">${fdate(e.date)}</td><td data-label="Περιγραφή">${(()=>{const det=[e.label&&e.label!=e.provider?e.label:"",e.notes||""].filter(Boolean).join("\n");return `<b>${esc(e.provider||e.label||"Έξοδο")}</b>${e.auto?" (αυτόματο)":""}${det?` <button type="button" class="xi" title="Σημειώσεις" onclick="this.nextElementSibling.classList.toggle('on')">ⓘ</button><div class="xn">${esc(det)}</div>`:""}`})()}</td><td data-label="Ιδιοκτήτης">${esc(e.owner)}</td><td data-label="Κατηγορία">${esc(e.category)}</td><td data-label="Ποσό"><b>${eur(e.amount)}</b></td><td data-label="Έκδοση">${fdate(e.issueDate)}</td><td data-label="Λήξη">${fdate(e.dueDate)}</td><td data-label="RF">${e.rf?`<code style="font-size:13px">${esc(e.rf)}</code> <button type="button" class="sec" onclick="gxCopy('${esc(e.rf)}')">Αντιγραφή</button>`:""}</td><td data-label="Κατάσταση"><span class="st" style="background:${s[1]};color:#fff">${s[0]}</span>${e.paid&&e.paidDate?`<div style="font-size:12px">${fdate(e.paidDate)}</div>`:""}</td><td class="act">${e.paid?"":`<button type="button" class="ok" onclick="gxPaid('${esc(e.id)}')">Πληρώθηκε</button>`}<button type="button" class="sec" onclick="gxEditForm('${esc(e.id)}')">Επεξεργασία</button><button type="button" class="del" onclick="gxDel('${esc(e.id)}')">Διαγραφή</button></td></tr>`}).join("")||'<tr><td colspan="10">Δεν υπάρχουν έξοδα.</td></tr>';
 $("xtot").innerHTML=`<span style="color:#ef6c00">Ανεξόφλητα: ${eur(sum(L.filter(e=>!e.paid)))}</span> — <span>Επαγγελματικά: ${eur(sum(gxBiz(L)))}</span> — <span>Προσωπικά: ${eur(sum(L.filter(e=>e.category=="Προσωπικό")))}</span> — Σύνολο: ${eur(sum(L))}`}
 function gxCopy(t){(navigator.clipboard&&navigator.clipboard.writeText?navigator.clipboard.writeText(t):Promise.reject()).then(()=>bkMsg("Αντιγράφηκε: "+t,1),()=>{prompt("Αντιγράψτε τον κωδικό:",t)})}
 function gxAfter(){persist();render();if($("xm").style.display=="flex")openBills();try{if($("gxBox"))gxUI()}catch(e){}try{awWrite()}catch(e){}}
@@ -294,6 +304,11 @@ const v={date:$("x_date").value||today(),amount:a,label:$("x_label").value.trim(
 if(v.paid&&!v.paidDate)v.paidDate=today();if(!v.paid)v.paidDate="";if(!v.label)v.label=v.provider||"Έξοδο";
 if(xEdit)Object.assign(xEdit,v);else db.generalExpenses.push(Object.assign({id:"gx"+Date.now().toString(36)+Math.random().toString(36).slice(2,6),auto:false},v));
 $("xform").style.display="none";xEdit=null;gxAfter()}
+(function(){let y=0,locked=false;function chk(){const open=[...document.querySelectorAll(".modal")].some(m=>m.style.display&&m.style.display!="none");
+if(open&&!locked){y=window.scrollY||0;document.body.style.top=(-y)+"px";document.body.classList.add("mlock");locked=true}
+else if(!open&&locked){document.body.classList.remove("mlock");document.body.style.top="";window.scrollTo(0,y);locked=false}}
+const mo=new MutationObserver(chk);document.addEventListener("DOMContentLoaded",()=>document.querySelectorAll(".modal").forEach(m=>mo.observe(m,{attributes:true,attributeFilter:["style"]})));
+if(document.readyState!="loading")document.querySelectorAll(".modal").forEach(m=>mo.observe(m,{attributes:true,attributeFilter:["style"]}))})();
 function gxYM(d){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")}
 function gxRun(){try{if(!db.recurring||!db.generalExpenses)return;const now=new Date(),cur=gxYM(now);let ch=false;
 db.recurring.forEach(rl=>{if(!rl.active||!rl.startMonth)return;rl.skip=rl.skip||[];let [y,m]=rl.startMonth.split("-").map(Number);
