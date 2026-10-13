@@ -57,7 +57,7 @@ main table,#rm table{display:block}main tbody,#rm tbody{display:block}
 .tot{font-size:18px}
 }
 </style></head><body>
-<header><h1>🚗 Μεταβιβάσεις Οχημάτων <small id="appVer" style="font-size:11px;font-weight:400;opacity:.6">v8</small></h1>
+<header><h1>🚗 Μεταβιβάσεις Οχημάτων <small id="appVer" style="font-size:11px;font-weight:400;opacity:.6">v9</small></h1>
 <button type="button" class="sec" id="menuBtn" onclick="this.parentNode.classList.toggle('open')">☰ Μενού</button>
 <div id="mbar"><input id="mq" type="search" placeholder="Αναζήτηση..." oninput="$('q').value=this.value;render()"><button type="button" class="sec" onclick="document.body.classList.toggle('showf')">Φίλτρα</button><button type="button" class="ok" onclick="openForm()">+ Νέα</button></div>
 <button type="button" class="hx ok" onclick="openForm()">+ Νέα καταχώρηση</button>
@@ -239,7 +239,14 @@ if(cur)["type","job","partner","status"].forEach(k=>{if(!v[k]&&cur[k])v[k]=cur[k
 if(cur){const ch=F.filter(k=>String(cur[k]??"")!==v[k]).map(k=>({f:k,from:cur[k]??"",to:v[k]}));
 if(ch.length){Object.assign(cur,v);cur.updated=Date.now();cur.history.push({at:now(),action:"Αλλαγή",changes:ch})}}
 else{db.records.push(Object.assign({id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),created:Date.now(),history:[{at:now(),action:"Δημιουργία καταχώρησης"}]},v))}
-persist();closeM("fm");render()}
+persist();closeM("fm");render();mvAfterSave(cur?cur.id:db.records[db.records.length-1].id)}
+function mvAfterSave(id){try{if(!filtered().some(r=>r.id==id)){["q","mq","df","dt","fp","fs","ft","fj"].forEach(x=>{const e=$(x);if(e)e.value=""});render()}
+const tr=[...document.querySelectorAll("#list tr")].find(t=>(t.getAttribute("onclick")||"").indexOf("'"+id+"'")>=0);
+if(tr){tr.scrollIntoView({block:"center"});tr.style.transition="background 1.5s";tr.style.background="#fff59d";setTimeout(()=>{tr.style.background=""},1600)}else window.scrollTo(0,0)}catch(e){console.error(e)}}
+function mvRefresh(){try{if(["fm","rm","sm"].some(m=>{const e=$(m);return e&&e.style.display&&e.style.display!="none"}))return;load();fillSelects();render()}catch(e){console.error(e)}}
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState=="visible")mvRefresh()});
+window.addEventListener("pageshow",e=>{if(e.persisted)mvRefresh()});
+window.addEventListener("storage",e=>{if(e.key===KEY||e.key===null)mvRefresh()});
 function delAsk(r){return confirm("Θέλεις να διαγράψεις αυτή την εγγραφή;\n"+(r.plate||"(χωρίς πινακίδα)")+" – "+(r.name||""))}
 function delRec(){if(!cur||!delAsk(cur))return;const c=cur;(db.deleted=db.deleted||{})[c.id]=Date.now();db.records=db.records.filter(r=>r!==c);persist();closeM("fm");render()}
 function delRow(id){try{const r=db.records.find(x=>x.id==id);if(!r||!delAsk(r))return;(db.deleted=db.deleted||{})[id]=Date.now();db.records=db.records.filter(x=>x.id!=id);persist();render()}catch(e){$("fstat").textContent="⚠ Σφάλμα διαγραφής: "+(e.message||e)}}
