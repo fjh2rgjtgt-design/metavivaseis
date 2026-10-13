@@ -64,6 +64,9 @@ main table,#rm table{display:block}main tbody,#rm tbody{display:block}
 <button type="button" class="hx sec" onclick="saveFile()">Αποθήκευση σε αρχείο</button>
 <button type="button" class="hx sec" onclick="document.getElementById('imp').click()">Άνοιγμα αρχείου</button>
 <button type="button" class="hx sec" onclick="exportCSV()">Εξαγωγή Excel (CSV)</button>
+<button type="button" class="hx sec" id="bkExp" onclick="bkExport()">Εξαγωγή</button>
+<button type="button" class="hx sec" id="bkImp" onclick="bkImport()">Εισαγωγή</button>
+<input type="file" id="bkFile" accept="application/json,.json" style="display:none" onchange="bkRead(this.files[0]);this.value=''">
 <button type="button" class="sec hx" id="linkBtn" style="display:none" onclick="linkFile()">Σύνδεση με αρχείο</button>
 <button type="button" class="hx" id="odBtn" style="background:#0078d4">Σύνδεση OneDrive</button>
 <button type="button" class="hx" onclick="openReport()">Ανά συνεργάτη</button>
@@ -338,4 +341,20 @@ function odMenu(){if(confirm("Συγχρονισμός τώρα με το OneDri
 if("serviceWorker" in navigator&&location.protocol=="https:")navigator.serviceWorker.register("sw.js").catch(()=>{});
 odInit();
 
-</script></body></html>
+</script><script>
+function bkMsg(t,ok){var d=document.createElement("div");d.textContent=t;d.style.cssText="position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:99999;padding:12px 18px;border-radius:10px;color:#fff;font-weight:700;max-width:90%;text-align:center;background:"+(ok?"#2e7d32":"#c62828");document.body.appendChild(d);setTimeout(function(){d.remove()},3500)}
+async function bkExport(){var name="metavivaseis_backup_"+new Date().toISOString().slice(0,10)+".json",txt=JSON.stringify(db,null,2),blob=new Blob([txt],{type:"application/json"});
+try{var file=null;try{file=new File([blob],name,{type:"application/json"})}catch(e){}
+if(file&&navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],title:"Metavivaseis"});bkMsg("Η εξαγωγή ολοκληρώθηκε",1);return}
+if(window.showSaveFilePicker){var h=await showSaveFilePicker({suggestedName:name,types:[{description:"JSON",accept:{"application/json":[".json"]}}]});var w=await h.createWritable();await w.write(blob);await w.close();bkMsg("Η εξαγωγή ολοκληρώθηκε",1);return}
+var u=URL.createObjectURL(blob),a=document.createElement("a");a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(u)},4000);bkMsg("Η εξαγωγή ολοκληρώθηκε",1)}
+catch(e){if(e&&e.name==="AbortError")return;bkMsg("Σφάλμα εξαγωγής: "+(e.message||e),0)}}
+async function bkImport(){if(window.showOpenFilePicker){try{var hs=await showOpenFilePicker({types:[{description:"JSON",accept:{"application/json":[".json"]}}]});bkRead(await hs[0].getFile())}catch(e){if(e&&e.name!=="AbortError")bkMsg("Σφάλμα εισαγωγής: "+(e.message||e),0)}return}
+document.getElementById("bkFile").click()}
+async function bkRead(f){if(!f)return;try{var d=JSON.parse(await f.text());
+if(!d||typeof d!=="object"||!Array.isArray(d.records)||!d.records.every(function(r){return r&&typeof r==="object"}))throw new Error("Το αρχείο δεν είναι αντίγραφο της εφαρμογής");
+if(!confirm("Να αντικατασταθούν τα τρέχοντα δεδομένα με "+d.records.length+" εγγραφές από το αρχείο;"))return;
+if(!Array.isArray(d.partners))d.partners=DEFP.slice();db=d;migrate();persist();render();bkMsg("Φορτώθηκαν "+d.records.length+" εγγραφές",1)}
+catch(e){bkMsg("Σφάλμα εισαγωγής: "+(e.message||"μη έγκυρο αρχείο"),0)}}
+</script>
+</body></html>
