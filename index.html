@@ -57,7 +57,7 @@ main table,#rm table{display:block}main tbody,#rm tbody{display:block}
 .tot{font-size:18px}
 }
 </style></head><body>
-<header><h1>🚗 Μεταβιβάσεις Οχημάτων <small id="appVer" style="font-size:11px;font-weight:400;opacity:.6">v11</small></h1>
+<header><h1>🚗 Μεταβιβάσεις Οχημάτων <small id="appVer" style="font-size:11px;font-weight:400;opacity:.6">v12</small></h1>
 <button type="button" class="sec" id="menuBtn" onclick="this.parentNode.classList.toggle('open')">☰ Μενού</button>
 <div id="mbar"><input id="mq" type="search" placeholder="Αναζήτηση..." oninput="$('q').value=this.value;render()"><button type="button" class="sec" onclick="document.body.classList.toggle('showf')">Φίλτρα</button><button type="button" class="ok" onclick="openForm()">+ Νέα</button></div>
 <button type="button" class="hx ok" onclick="openForm()">+ Νέα καταχώρηση</button>
@@ -86,7 +86,7 @@ main table,#rm table{display:block}main tbody,#rm tbody{display:block}
 <div><label>Τύπος εργασίας</label><select id="fj" onchange="render()"></select></div>
 </div>
 <div class="card"><span class="tot" id="tot"></span></div>
-<div class="card"><table><thead><tr><th>Ημ/νία</th><th>Πινακίδα</th><th>Τύπος</th><th>Εργασία</th><th>Συνεργάτης</th><th>Αγοραστής</th><th>Τηλέφωνο</th><th>Bonus</th><th style="font-weight:400;color:#666">Παράβολα</th><th>Κατάσταση</th><th>Παρατηρήσεις</th><th></th></tr></thead><tbody id="list"></tbody></table></div>
+<div class="card"><table><thead><tr><th>Ημ/νία</th><th>Πινακίδα</th><th>Τύπος</th><th>Εργασία</th><th>Συνεργάτης</th><th>Αγοραστής</th><th>Τηλέφωνο</th><th>Bonus</th><th style="font-weight:400;color:#666">Παράβολα</th><th style="font-weight:400;color:#c62828">Έξοδα</th><th>Κατάσταση</th><th>Παρατηρήσεις</th><th></th></tr></thead><tbody id="list"></tbody></table></div>
 </main>
 <div class="modal" id="fm"><div class="card">
 <h2 id="ftitle">Καταχώρηση</h2>
@@ -102,6 +102,8 @@ main table,#rm table{display:block}main tbody,#rm tbody{display:block}
 <div><label>ΑΦΜ</label><input id="f_afm" inputmode="numeric"></div>
 <div><label>Διεύθυνση</label><input id="f_addr"></div>
 <div><label><span style="font-weight:400;color:#666">Ποσό για παράβολα (€)</span></label><input id="f_amount" type="number" step="0.01" min="0"></div>
+<div><label style="color:#c62828">Έξοδα (€)</label><input id="f_expenses" type="number" step="0.01" min="0"></div>
+<div><label>Σημείωση εξόδων</label><input id="f_expensesNote"></div>
 <div><label>Κατάσταση</label><select id="f_status"></select></div>
 </div>
 <label>Παρατηρήσεις</label><textarea id="f_notes" rows="3" placeholder="π.χ. αποστολή άδειας με courier"></textarea>
@@ -111,7 +113,7 @@ main table,#rm table{display:block}main tbody,#rm tbody{display:block}
 <div id="histBox"></div>
 </div></div>
 <div class="modal" id="rm"><div class="card" style="max-width:1100px"><h2>Αναφορά ανά συνεργάτη</h2>
-<p id="rinfo" style="font-size:15px"></p><div style="overflow:auto"><table><thead><tr><th>Συνεργάτης</th><th>Εργασίες</th><th>Σύνολο Bonus</th><th>Ανά τύπο οχήματος</th><th>Ανά τύπο εργασίας</th><th style="font-weight:400;color:#666;font-size:15px">Παράβολα</th></tr></thead><tbody id="rlist"></tbody></table></div>
+<p id="rinfo" style="font-size:15px"></p><div style="overflow:auto"><table><thead><tr><th>Συνεργάτης</th><th>Εργασίες</th><th>Σύνολο Bonus</th><th>Ανά τύπο οχήματος</th><th>Ανά τύπο εργασίας</th><th style="font-weight:400;color:#666;font-size:15px">Παράβολα</th><th style="color:#c62828">Έξοδα</th><th>Καθαρό (Bonus − Έξοδα)</th></tr></thead><tbody id="rlist"></tbody></table></div>
 <p><button type="button" class="sec" onclick="closeM('rm')">Κλείσιμο</button></p></div></div>
 <div class="modal" id="sm"><div class="card"><h2>Ρυθμίσεις – Συνεργάτες</h2>
 <div id="plist"></div><label>Νέος συνεργάτης</label><input id="newp">
@@ -193,10 +195,12 @@ const JOBS=["Μεταβίβαση", "Ταξινόμηση", "Άρση", "Κλη�
 const JOBMAP={"ΜΕΤΑΒΙΒΑΣΗ": "Μεταβίβαση", "ΤΑΞΙΝΟΜΗΣΗ": "Ταξινόμηση", "ΑΡΣΗ": "Άρση", "ΚΛΗΡΟΝΟΜΙΚΟ": "Κληρονομικό", "ΥΠΕΡΑΞΙΑ": "Υπεραξία", "ΠΙΝΑΚΙΔΕΣ": "Πινακίδες", "ΑΔΕΙΑ ΟΔΙΚΟΥ": "Άδεια οδικού", "ΑΔΕΙΑ": "Άδεια", "ΧΡΩΜΑ": "Αλλαγή χρώματος", "ΦΟΡΤΗΓΟ": "Φορτηγό"};
 const STATUS=["Σε εξέλιξη","Ολοκληρώθηκε"];
 const DEFP=["Θαγγόπουλος","Μπιζάνης Ταταρίδης","Mercedes","Mazda","Δεμερτζής","Σπύρος Πασχάλης","Καρανικολάου","Γιαννακόπουλος","Άλλος/Ιδιώτης"];
-const LABELS={date:"Ημερομηνία",plate:"Πινακίδα",type:"Τύπος",job:"Τύπος εργασίας",partner:"Συνεργάτης",name:"Αγοραστής",afm:"ΑΦΜ",addr:"Διεύθυνση",phone:"Τηλέφωνο",amount:"Ποσό για παράβολα",bonus:"Bonus",status:"Κατάσταση",notes:"Παρατηρήσεις"};
+const LABELS={date:"Ημερομηνία",plate:"Πινακίδα",type:"Τύπος",job:"Τύπος εργασίας",partner:"Συνεργάτης",name:"Αγοραστής",afm:"ΑΦΜ",addr:"Διεύθυνση",phone:"Τηλέφωνο",amount:"Ποσό για παράβολα",bonus:"Bonus",expenses:"Έξοδα",expensesNote:"Σημείωση εξόδων",status:"Κατάσταση",notes:"Παρατηρήσεις"};
 const KEY="metavivaseis_v1";let db,cur=null,fh=null,dirH=null,usbQ=Promise.resolve(),usbT=null;
-function load(){let ls=null;try{ls=JSON.parse(localStorage.getItem(KEY))}catch(e){}const f=window.__METAV_DATA;db=(f&&f.records&&(!ls||!ls.records||(f.savedAt||0)>=(ls.savedAt||0)))?JSON.parse(JSON.stringify(f)):ls;if(!db||!db.records)db={records:[],partners:DEFP.slice()};migrate()}
+function load(){let ls=null;try{ls=JSON.parse(localStorage.getItem(KEY))}catch(e){}const f=window.__METAV_DATA;db=(f&&f.records&&(!ls||!ls.records||(f.savedAt||0)>=(ls.savedAt||0)))?JSON.parse(JSON.stringify(f)):ls;if(!db||!db.records)db={records:[],partners:DEFP.slice()};migrate();gxRun()}
 function migrate(){let ch=false;const OLD=["Θαγκόπουλος","Φαγκόπουλος"],N="Θαγγόπουλος";
+if(!Array.isArray(db.generalExpenses)){db.generalExpenses=[];ch=true}if(!Array.isArray(db.recurring)){db.recurring=[{id:"rent",label:"Ενοίκιο",amount:270,day:28,startMonth:"2026-10",active:true}];ch=true}
+db.records.forEach(r=>{if(r.expenses===undefined)r.expenses="";if(r.expensesNote===undefined)r.expensesNote=""});
 db.partners=db.partners.map(p=>OLD.includes(p)?(ch=true,N):p).filter((p,i,a)=>a.indexOf(p)==i);
 db.records.forEach(r=>{const c=[];if(OLD.includes(r.partner)){c.push({f:"partner",from:r.partner,to:N});r.partner=N}
 const m=!r.job&&/Εργασία: ([^|]+?)\s*(\||$)/.exec(r.notes||"");if(m){const k=m[1].trim(),jb=JOBMAP[k]||"Άλλο",nn=r.notes.replace(/Εργασία: [^|]*\|?\s*/,"").trim();
@@ -222,9 +226,9 @@ function filtered(noPartner){const D1=$("df").value,D2=$("dt").value;const q=$("
 return db.records.filter(r=>(noPartner||!p||r.partner==p)&&(!D1||(r.date||"")>=D1)&&(!D2||(r.date||"")<=D2)&&(!s||r.status==s)&&(!t||r.type==t)&&(!j||r.job==j)&&(!q||[r.plate,r.job,r.name,r.phone,r.partner,r.notes,r.afm].join(" ").toLowerCase().includes(q)))
 .sort((a,b)=>(b.date||"").localeCompare(a.date||"")||b.created-a.created)}
 function render(){const L=filtered();
-$("list").innerHTML=L.map(r=>`<tr onclick="openForm('${r.id}')" style="cursor:pointer"><td data-label="Ημ/νία">${fdate(r.date)}</td><td class="pl"><b>${esc(r.plate)}</b></td><td data-label="Τύπος">${esc(r.type)}</td><td>${r.job?`<span class="st" style="background:#eee">${esc(r.job)}</span>`:""}</td><td data-label="Συνεργάτης">${esc(r.partner)}</td><td data-label="Αγοραστής">${esc(r.name)}</td><td data-label="Τηλ.">${r.phone?`<a href="tel:${esc(r.phone)}" onclick="event.cancelBubble=true;if(event.stopPropagation)event.stopPropagation()">${esc(r.phone)}</a>`:""}</td><td class="bon" data-label="Bonus">${r.bonus!==""&&r.bonus!=null?eur(r.bonus):""}</td><td style="color:#777;font-size:15px" data-label="Παράβολα">${r.amount!==""&&r.amount!=null?eur(r.amount):""}</td><td><span class="st s${STATUS.indexOf(r.status)}">${esc(r.status)}</span></td><td data-label="Σημ.">${esc(r.notes)}</td><td class="act"><button type="button" class="sec" onclick="event.cancelBubble=true;if(event.stopPropagation)event.stopPropagation();openForm('${r.id}');return false">Επεξεργασία</button><button type="button" class="del" onclick="event.cancelBubble=true;if(event.stopPropagation)event.stopPropagation();delRow('${r.id}');return false">Διαγραφή</button></td></tr>`).join("")||`<tr><td colspan="12">Δεν υπάρχουν καταχωρήσεις.</td></tr>`;
-$("tot").innerHTML=`<span style="color:#2e7d32">Σύνολο Bonus: ${eur(L.reduce((a,r)=>a+(+r.bonus||0),0))}</span> <span style="font-weight:400;font-size:16px;color:#555">— Καταχωρήσεις: ${L.length} — Ποσά για παράβολα: ${eur(L.reduce((a,r)=>a+(+r.amount||0),0))}</span>`}
-const F=["date","plate","type","job","partner","name","afm","addr","phone","amount","bonus","status","notes"];
+$("list").innerHTML=L.map(r=>`<tr onclick="openForm('${r.id}')" style="cursor:pointer"><td data-label="Ημ/νία">${fdate(r.date)}</td><td class="pl"><b>${esc(r.plate)}</b></td><td data-label="Τύπος">${esc(r.type)}</td><td>${r.job?`<span class="st" style="background:#eee">${esc(r.job)}</span>`:""}</td><td data-label="Συνεργάτης">${esc(r.partner)}</td><td data-label="Αγοραστής">${esc(r.name)}</td><td data-label="Τηλ.">${r.phone?`<a href="tel:${esc(r.phone)}" onclick="event.cancelBubble=true;if(event.stopPropagation)event.stopPropagation()">${esc(r.phone)}</a>`:""}</td><td class="bon" data-label="Bonus">${r.bonus!==""&&r.bonus!=null?eur(r.bonus):""}</td><td style="color:#777;font-size:15px" data-label="Παράβολα">${r.amount!==""&&r.amount!=null?eur(r.amount):""}</td><td style="color:#c62828;font-size:15px" data-label="Έξοδα" title="${esc(r.expensesNote)}">${r.expenses!==""&&r.expenses!=null?eur(r.expenses):""}${r.expensesNote?` <span style="color:#888;font-size:13px">(${esc(r.expensesNote)})</span>`:""}</td><td><span class="st s${STATUS.indexOf(r.status)}">${esc(r.status)}</span></td><td data-label="Σημ.">${esc(r.notes)}</td><td class="act"><button type="button" class="sec" onclick="event.cancelBubble=true;if(event.stopPropagation)event.stopPropagation();openForm('${r.id}');return false">Επεξεργασία</button><button type="button" class="del" onclick="event.cancelBubble=true;if(event.stopPropagation)event.stopPropagation();delRow('${r.id}');return false">Διαγραφή</button></td></tr>`).join("")||`<tr><td colspan="13">Δεν υπάρχουν καταχωρήσεις.</td></tr>`;
+$("tot").innerHTML=`<span style="color:#2e7d32">Σύνολο Bonus: ${eur(L.reduce((a,r)=>a+(+r.bonus||0),0))}</span> <span style="font-weight:400;font-size:16px;color:#555">— Καταχωρήσεις: ${L.length} — Ποσά για παράβολα: ${eur(L.reduce((a,r)=>a+(+r.amount||0),0))}</span>${gxTotHtml(L)}`}
+const F=["date","plate","type","job","partner","name","afm","addr","phone","amount","bonus","expenses","expensesNote","status","notes"];
 function openForm(id){cur=id?db.records.find(r=>r.id==id):null;fillSelects();
 F.forEach(k=>$("f_"+k).value=cur?(cur[k]??""):"");if(!cur){$("f_date").value=today();$("f_status").value=STATUS[0];$("f_type").value=TYPES[0];$("f_job").value=JOBS[0]}
 $("ftitle").textContent=cur?"Επεξεργασία "+cur.plate:"Νέα καταχώρηση";$("delBtn").style.display=cur?"":"none";
@@ -233,7 +237,7 @@ formErr("");$("fm").style.display="flex"}
 function closeM(m){$(m).style.display="none"}
 function formErr(m){const e=$("formErr");e.textContent=m||"";e.style.display=m?"":"none"}
 function saveRec(){try{saveRec0()}catch(e){formErr("Σφάλμα αποθήκευσης: "+(e.message||e))}return false}
-function saveRec0(){formErr("");const v={};F.forEach(k=>v[k]=$("f_"+k).value.trim());v.plate=v.plate.toUpperCase();v.amount=v.amount===""?"":String(+v.amount);v.bonus=v.bonus===""?"":String(+v.bonus);
+function saveRec0(){formErr("");const v={};F.forEach(k=>v[k]=$("f_"+k).value.trim());v.plate=v.plate.toUpperCase();v.amount=v.amount===""?"":String(+v.amount);v.bonus=v.bonus===""?"":String(+v.bonus);v.expenses=v.expenses===""?"":String(+v.expenses);
 if(!v.plate&&!cur){formErr("Συμπληρώστε τον αριθμό κυκλοφορίας.");$("f_plate").focus();return}
 if(cur)["type","job","partner","status"].forEach(k=>{if(!v[k]&&cur[k])v[k]=cur[k]});
 if(cur){const ch=F.filter(k=>String(cur[k]??"")!==v[k]).map(k=>({f:k,from:cur[k]??"",to:v[k]}));
@@ -247,28 +251,56 @@ function mvRefresh(){try{if(["fm","rm","sm"].some(m=>{const e=$(m);return e&&e.s
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState=="visible")mvRefresh()});
 window.addEventListener("pageshow",e=>{if(e.persisted)mvRefresh()});
 window.addEventListener("storage",e=>{if(e.key===KEY||e.key===null)mvRefresh()});
+function gxYM(d){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")}
+function gxRun(){try{if(!db.recurring||!db.generalExpenses)return;const now=new Date(),cur=gxYM(now);let ch=false;
+db.recurring.forEach(rl=>{if(!rl.active||!rl.startMonth)return;rl.skip=rl.skip||[];let [y,m]=rl.startMonth.split("-").map(Number);
+for(let g=0;g<600;g++){const ym=y+"-"+String(m).padStart(2,"0");if(ym>cur)break;
+ const last=new Date(y,m,0).getDate(),day=Math.min(+rl.day||1,last),due=new Date(y,m-1,day);
+ if(now>=due&&!rl.skip.includes(ym)&&!db.generalExpenses.some(e=>e.ruleId==rl.id&&(e.date||"").slice(0,7)==ym)){
+  db.generalExpenses.push({id:"gx_"+rl.id+"_"+ym,date:ym+"-"+String(day).padStart(2,"0"),amount:+rl.amount||0,label:rl.label||"",auto:true,ruleId:rl.id});ch=true}
+ m++;if(m>12){m=1;y++}}});
+if(ch){localStorage.setItem(KEY,JSON.stringify(db));try{window.awWrite&&awWrite()}catch(e){}}}catch(e){console.error("gxRun",e)}}
+function gxMerge(inc){if(!db.generalExpenses)db.generalExpenses=[];if(!db.recurring)db.recurring=[];
+(inc.generalExpenses||[]).forEach(e=>{if(!e||typeof e!="object")return;if(db.generalExpenses.some(x=>x.id==e.id))return;
+ if(e.ruleId&&db.generalExpenses.some(x=>x.ruleId==e.ruleId&&(x.date||"").slice(0,7)==(e.date||"").slice(0,7)))return;db.generalExpenses.push(JSON.parse(JSON.stringify(e)))});
+(inc.recurring||[]).forEach(r=>{if(r&&!db.recurring.some(x=>x.id==r.id))db.recurring.push(JSON.parse(JSON.stringify(r)))})}
+function gxPeriod(){const D1=$("df").value,D2=$("dt").value;return (db.generalExpenses||[]).filter(e=>(!D1||(e.date||"")>=D1)&&(!D2||(e.date||"")<=D2))}
+function gxPeriodSum(){return gxPeriod().reduce((a,e)=>a+(+e.amount||0),0)}
+function gxSum(L){return L.reduce((a,r)=>a+(+r.expenses||0),0)}
+function gxTotHtml(L){const b=L.reduce((a,r)=>a+(+r.bonus||0),0),e=gxSum(L),g=gxPeriodSum();
+return ` <span style="font-weight:400;font-size:16px;color:#c62828">— Έξοδα: ${eur(e)} — Γενικά έξοδα: ${eur(g)}</span> <span style="color:#1f4e79">— Καθαρό: ${eur(b-e-g)}</span>`}
+function gxUI(){let box=$("gxBox");const card=$("sm").querySelector(".card");if(!box){box=document.createElement("div");box.id="gxBox";box.style.cssText="border-top:2px solid #ccd;margin-top:16px;padding-top:8px";const pl=$("plist");pl.parentNode.insertBefore(box,$("dataDirBox")||null)}
+const rl=(db.recurring||[])[0];
+box.innerHTML=`<h2>Γενικά έξοδα</h2>`+(rl?`<p style="font-size:15px"><b>${esc(rl.label)}</b> κάθε μήνα: <input id="gxAmt" type="number" step="0.01" style="width:90px" value="${esc(rl.amount)}"> € την ημέρα <input id="gxDay" type="number" min="1" max="31" style="width:60px" value="${esc(rl.day)}"> <label style="display:inline"><input type="checkbox" id="gxAct" ${rl.active?"checked":""}> ενεργό</label> <button type="button" class="ok" onclick="gxSaveRule()">Αποθήκευση</button></p>`:"")
++`<div style="font-size:15px">${(db.generalExpenses||[]).slice().sort((a,b)=>(b.date||"").localeCompare(a.date||"")).map(e=>`<div style="display:flex;gap:8px;align-items:center;margin:3px 0"><span style="flex:1">${fdate(e.date)} – ${esc(e.label)} – <b style="color:#c62828">${eur(e.amount)}</b>${e.auto?" (αυτόματο)":""}</span><button type="button" class="del" onclick="gxDel('${esc(e.id)}')">Διαγραφή</button></div>`).join("")||"Δεν υπάρχουν γενικά έξοδα."}</div>`
++`<p style="font-size:15px">Νέο: <input id="gxNd" type="date" style="width:150px" value="${today()}"> <input id="gxNl" placeholder="Περιγραφή" style="width:150px"> <input id="gxNa" type="number" step="0.01" placeholder="€" style="width:90px"> <button type="button" class="ok" onclick="gxAdd()">Προσθήκη</button></p>`}
+function gxSaveRule(){const rl=db.recurring[0];rl.amount=+$("gxAmt").value||0;rl.day=Math.max(1,Math.min(31,+$("gxDay").value||1));rl.active=$("gxAct").checked;persist();gxRun();render();gxUI();try{awWrite()}catch(e){}}
+function gxAdd(){const a=+$("gxNa").value;if(!a){alert("Συμπληρώστε ποσό.");return}db.generalExpenses.push({id:"gx"+Date.now().toString(36)+Math.random().toString(36).slice(2,6),date:$("gxNd").value||today(),amount:a,label:$("gxNl").value.trim()||"Έξοδο",auto:false});persist();render();gxUI();try{awWrite()}catch(e){}}
+function gxDel(id){const e=db.generalExpenses.find(x=>x.id==id);if(!e||!confirm("Διαγραφή γενικού εξόδου;\n"+fdate(e.date)+" – "+e.label+" – "+eur(e.amount)))return;
+if(e.auto&&e.ruleId){const rl=db.recurring.find(r=>r.id==e.ruleId);if(rl){rl.skip=rl.skip||[];rl.skip.push((e.date||"").slice(0,7))}}
+db.generalExpenses=db.generalExpenses.filter(x=>x!==e);persist();render();gxUI();try{awWrite()}catch(e){}}
 function delAsk(r){return confirm("Θέλεις να διαγράψεις αυτή την εγγραφή;\n"+(r.plate||"(χωρίς πινακίδα)")+" – "+(r.name||""))}
 function delRec(){if(!cur||!delAsk(cur))return;const c=cur;(db.deleted=db.deleted||{})[c.id]=Date.now();db.records=db.records.filter(r=>r!==c);persist();closeM("fm");render()}
 function delRow(id){try{const r=db.records.find(x=>x.id==id);if(!r||!delAsk(r))return;(db.deleted=db.deleted||{})[id]=Date.now();db.records=db.records.filter(x=>x.id!=id);persist();render()}catch(e){$("fstat").textContent="⚠ Σφάλμα διαγραφής: "+(e.message||e)}}
 function openReport(){const L=filtered(true),G={};
-L.forEach(r=>{const k=r.partner||"—",g=G[k]=G[k]||{n:0,b:0,a:0,t:{},j:{}};g.n++;g.b+=+r.bonus||0;g.a+=+r.amount||0;g.t[r.type||"—"]=(g.t[r.type||"—"]||0)+1;g.j[r.job||"—"]=(g.j[r.job||"—"]||0)+1});
+L.forEach(r=>{const k=r.partner||"—",g=G[k]=G[k]||{n:0,b:0,a:0,e:0,t:{},j:{}};g.n++;g.b+=+r.bonus||0;g.a+=+r.amount||0;g.e+=+r.expenses||0;g.t[r.type||"—"]=(g.t[r.type||"—"]||0)+1;g.j[r.job||"—"]=(g.j[r.job||"—"]||0)+1});
 const br=o=>Object.entries(o).sort((x,y)=>y[1]-x[1]).map(([k,v])=>esc(k)+": "+v).join(", ");
 const rows=Object.entries(G).sort((x,y)=>y[1].b-x[1].b||y[1].n-x[1].n);
 $("rinfo").textContent="Περίοδος: "+($("df").value?fdate($("df").value):"αρχή")+" – "+($("dt").value?fdate($("dt").value):"σήμερα")+" (ισχύουν και τα άλλα φίλτρα εκτός του συνεργάτη). Πατήστε έναν συνεργάτη για να φιλτράρετε τη λίστα.";
-$("rlist").innerHTML=rows.map(([k,g])=>`<tr style="cursor:pointer" data-p="${esc(k)}" onclick="pickPartner(this.dataset.p)"><td><b>${esc(k)}</b></td><td data-label="Εργασίες">${g.n}</td><td data-label="Bonus"><b style="color:#2e7d32">${eur(g.b)}</b></td><td data-label="Οχήματα">${br(g.t)}</td><td data-label="Εργασία">${br(g.j)}</td><td style="color:#777;font-size:15px" data-label="Παράβολα">${eur(g.a)}</td></tr>`).join("")
-+`<tr style="background:#e6edf5"><td><b>ΣΥΝΟΛΟ</b></td><td data-label="Εργασίες">${L.length}</td><td data-label="Bonus"><b>${eur(L.reduce((a,r)=>a+(+r.bonus||0),0))}</b></td><td></td><td></td><td style="font-size:15px">${eur(L.reduce((a,r)=>a+(+r.amount||0),0))}</td></tr>`;
+$("rlist").innerHTML=rows.map(([k,g])=>`<tr style="cursor:pointer" data-p="${esc(k)}" onclick="pickPartner(this.dataset.p)"><td><b>${esc(k)}</b></td><td data-label="Εργασίες">${g.n}</td><td data-label="Bonus"><b style="color:#2e7d32">${eur(g.b)}</b></td><td data-label="Οχήματα">${br(g.t)}</td><td data-label="Εργασία">${br(g.j)}</td><td style="color:#777;font-size:15px" data-label="Παράβολα">${eur(g.a)}</td><td style="color:#c62828" data-label="Έξοδα">${eur(g.e)}</td><td data-label="Καθαρό"><b>${eur(g.b-g.e)}</b></td></tr>`).join("")
++`<tr style="background:#e6edf5"><td><b>ΣΥΝΟΛΟ</b></td><td data-label="Εργασίες">${L.length}</td><td data-label="Bonus"><b>${eur(L.reduce((a,r)=>a+(+r.bonus||0),0))}</b></td><td></td><td></td><td style="font-size:15px">${eur(L.reduce((a,r)=>a+(+r.amount||0),0))}</td><td style="color:#c62828" data-label="Έξοδα">${eur(gxSum(L))}</td><td data-label="Καθαρό"><b>${eur(L.reduce((a,r)=>a+(+r.bonus||0),0)-gxSum(L))}</b></td></tr>`+(gxPeriod().length?`<tr style="background:#fdecea"><td><b>Γενικά έξοδα</b></td><td data-label="Εγγραφές">${gxPeriod().length}</td><td></td><td></td><td></td><td></td><td style="color:#c62828" data-label="Γενικά έξοδα">${eur(gxPeriodSum())}</td><td></td></tr>`:"")+`<tr style="background:#dfe9d8"><td><b>ΚΑΘΑΡΟ ΣΥΝΟΛΟ</b></td><td></td><td></td><td></td><td></td><td></td><td></td><td data-label="Καθαρό"><b>${eur(L.reduce((a,r)=>a+(+r.bonus||0),0)-gxSum(L)-gxPeriodSum())}</b></td></tr>`;
 $("rm").style.display="flex"}
 function pickPartner(p){if(![...$("fp").options].some(o=>o.value==p))$("fp").add(new Option(p,p));$("fp").value=p;closeM("rm");render()}
-function openSettings(){$("plist").innerHTML=db.partners.map((p,i)=>`<div style="display:flex;gap:8px;align-items:center;margin:4px 0"><span style="flex:1">${esc(p)}</span><button type="button" class="del" onclick="rmPartner(${i})">Αφαίρεση</button></div>`).join("");$("sm").style.display="flex"}
+function openSettings(){setTimeout(gxUI,0);$("plist").innerHTML=db.partners.map((p,i)=>`<div style="display:flex;gap:8px;align-items:center;margin:4px 0"><span style="flex:1">${esc(p)}</span><button type="button" class="del" onclick="rmPartner(${i})">Αφαίρεση</button></div>`).join("");$("sm").style.display="flex"}
 function addPartner(){const p=$("newp").value.trim();if(p&&!db.partners.includes(p)){db.partners.push(p);persist();fillSelects();render()}$("newp").value="";openSettings()}
 function rmPartner(i){if(confirm("Αφαίρεση από τη λίστα; (οι παλιές καταχωρήσεις μένουν)")){db.partners.splice(i,1);persist();fillSelects();render();openSettings()}}
 function download(name,data,type){const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([data],{type}));a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},500)}
 function saveFile(){download("metavivaseis_"+today()+".json",JSON.stringify(db,null,2),"application/json")}
 function importFile(inp){const f=inp.files[0];if(!f)return;f.text().then(t=>{const d=JSON.parse(t);if(!mvValid(d))throw 0;
 const p=mvPlan(db,d);if(confirm(mvConfirmText(p))){mvSafety();mvApply(d,p);migrate();persist();fillSelects();render();alert(mvDoneText(p))}}).catch(()=>alert("Μη έγκυρο αρχείο."));inp.value=""}
-function exportCSV(){const H=["Ημερομηνία","Πινακίδα","Τύπος οχήματος","Τύπος εργασίας","Συνεργάτης","Αγοραστής","ΑΦΜ","Διεύθυνση","Τηλέφωνο","Bonus (€)","Ποσό για παράβολα (€)","Κατάσταση","Παρατηρήσεις"];
+function exportCSV(){const H=["Ημερομηνία","Πινακίδα","Τύπος οχήματος","Τύπος εργασίας","Συνεργάτης","Αγοραστής","ΑΦΜ","Διεύθυνση","Τηλέφωνο","Bonus (€)","Ποσό για παράβολα (€)","Έξοδα (€)","Σημείωση εξόδων","Κατάσταση","Παρατηρήσεις"];
 const q=s=>'"'+String(s??"").replace(/"/g,'""')+'"';
-const rows=filtered().map(r=>[fdate(r.date),r.plate,r.type,r.job,r.partner,r.name,r.afm,r.addr,r.phone,String(r.bonus||"").replace(".",","),String(r.amount||"").replace(".",","),r.status,r.notes].map(q).join(";"));
+const rows=filtered().map(r=>[fdate(r.date),r.plate,r.type,r.job,r.partner,r.name,r.afm,r.addr,r.phone,String(r.bonus||"").replace(".",","),String(r.amount||"").replace(".",","),String(r.expenses||"").replace(".",","),r.expensesNote,r.status,r.notes].map(q).join(";"));
 download("metavivaseis_"+today()+".csv","\uFEFF"+[H.map(q).join(";")].concat(rows).join("\r\n"),"text/csv;charset=utf-8")}
 async function linkFile(){return;try{fh=await window.showSaveFilePicker({suggestedName:"metavivaseis.json",types:[{description:"JSON",accept:{"application/json":[".json"]}}]});
 await writeLinked();$("fstat").textContent="✔ Αυτόματη αποθήκευση στο: "+fh.name}catch(e){if(e.name!="AbortError")alert("Σφάλμα σύνδεσης αρχείου: "+e.message)}}
@@ -381,7 +413,7 @@ function mvApply(inc,p){var i,o,k,nid;
 for(i=0;i<p.ops.length;i++){o=p.ops[i];
 if(o.t=="u"){for(k in o.r)if(Object.prototype.hasOwnProperty.call(o.r,k)&&k!="id")o.m[k]=o.r[k]}
 else{var c=JSON.parse(JSON.stringify(o.r));if(c.id==null||c.id===""||p.ids[String(c.id)]){do{nid="imp"+new Date().getTime().toString(36)+Math.random().toString(36).slice(2,8)}while(p.ids[nid]);c.id=nid}p.ids[String(c.id)]=1;db.records.push(c)}}
-if(!db.partners)db.partners=[];var ps=inc.partners||[];for(i=0;i<ps.length;i++){var have=false;for(k=0;k<db.partners.length;k++)if(db.partners[k]===ps[i])have=true;if(!have)db.partners.push(ps[i])}}
+gxMerge(inc);if(!db.partners)db.partners=[];var ps=inc.partners||[];for(i=0;i<ps.length;i++){var have=false;for(k=0;k<db.partners.length;k++)if(db.partners[k]===ps[i])have=true;if(!have)db.partners.push(ps[i])}}
 function mvValid(d){if(!d||typeof d!=="object"||!d.records||Object.prototype.toString.call(d.records)!=="[object Array]")return false;for(var i=0;i<d.records.length;i++)if(!d.records[i]||typeof d.records[i]!=="object")return false;return true}
 function mvConfirmText(p){return "Θα προστεθούν "+p.add+" νέες και θα ενημερωθούν "+p.upd+" υπάρχουσες εγγραφές. Καμία δεν θα διαγραφεί. Συνέχεια;"}
 function mvDoneText(p){return "Ολοκληρώθηκε: "+p.add+" νέες, "+p.upd+" ενημερώθηκαν. Σύνολο "+db.records.length+" εγγραφές."}
