@@ -57,7 +57,7 @@ main table,#rm table{display:block}main tbody,#rm tbody{display:block}
 .tot{font-size:18px}
 }
 </style></head><body>
-<header><h1>🚗 Μεταβιβάσεις Οχημάτων <small id="appVer" style="font-size:11px;font-weight:400;opacity:.6">v10</small></h1>
+<header><h1>🚗 Μεταβιβάσεις Οχημάτων <small id="appVer" style="font-size:11px;font-weight:400;opacity:.6">v11</small></h1>
 <button type="button" class="sec" id="menuBtn" onclick="this.parentNode.classList.toggle('open')">☰ Μενού</button>
 <div id="mbar"><input id="mq" type="search" placeholder="Αναζήτηση..." oninput="$('q').value=this.value;render()"><button type="button" class="sec" onclick="document.body.classList.toggle('showf')">Φίλτρα</button><button type="button" class="ok" onclick="openForm()">+ Νέα</button></div>
 <button type="button" class="hx ok" onclick="openForm()">+ Νέα καταχώρηση</button>
@@ -270,9 +270,9 @@ function exportCSV(){const H=["Ημερομηνία","Πινακίδα","Τύπ�
 const q=s=>'"'+String(s??"").replace(/"/g,'""')+'"';
 const rows=filtered().map(r=>[fdate(r.date),r.plate,r.type,r.job,r.partner,r.name,r.afm,r.addr,r.phone,String(r.bonus||"").replace(".",","),String(r.amount||"").replace(".",","),r.status,r.notes].map(q).join(";"));
 download("metavivaseis_"+today()+".csv","\uFEFF"+[H.map(q).join(";")].concat(rows).join("\r\n"),"text/csv;charset=utf-8")}
-async function linkFile(){try{fh=await window.showSaveFilePicker({suggestedName:"metavivaseis.json",types:[{description:"JSON",accept:{"application/json":[".json"]}}]});
+async function linkFile(){return;try{fh=await window.showSaveFilePicker({suggestedName:"metavivaseis.json",types:[{description:"JSON",accept:{"application/json":[".json"]}}]});
 await writeLinked();$("fstat").textContent="✔ Αυτόματη αποθήκευση στο: "+fh.name}catch(e){if(e.name!="AbortError")alert("Σφάλμα σύνδεσης αρχείου: "+e.message)}}
-async function writeLinked(){try{const w=await fh.createWritable();await w.write(JSON.stringify(db,null,2));await w.close()}catch(e){$("fstat").textContent="⚠ Αποτυχία αποθήκευσης στο αρχείο"}}
+async function writeLinked(){return;try{const w=await fh.createWritable();await w.write(JSON.stringify(db,null,2));await w.close()}catch(e){$("fstat").textContent="⚠ Αποτυχία αποθήκευσης στο αρχείο"}}
 document.addEventListener("keydown",e=>{if(e.key=="Escape"){closeM("fm");closeM("sm");closeM("rm")}});
 const DRIVE=(()=>{const m=/^file:\/\/\/([A-Za-z]):/i.exec(location.href);return m&&m[1].toUpperCase()!="C"?m[1].toUpperCase():null})();
 const DATAF="metavivaseis_data.json",BAKF="metavivaseis_data.backup.json",JSF="metavivaseis_data.js";let pendH=null,asked=false;
@@ -281,20 +281,20 @@ async function idbGet(k){const d=await idb();return new Promise(ok=>{const q=d.t
 async function idbSet(k,v){try{const d=await idb();await new Promise(ok=>{const t=d.transaction("h","readwrite");t.objectStore("h").put(v,k);t.oncomplete=ok;t.onerror=ok})}catch(e){}}
 function setStore(){const c=$("store");c.textContent=dirH?"Αποθήκευση: "+(DRIVE?"USB ("+DRIVE+":)":"Φάκελος ("+dirH.name+")"):"Αποθήκευση: Browser";c.style.background=dirH?"#c8e6c9":"#fff"}
 async function wfile(h,n,t){const w=await(await h.getFileHandle(n,{create:true})).createWritable();await w.write(t);await w.close()}
-function writeUSB(){const h=dirH;if(!h)return;const data=JSON.stringify(db,null,1);
+function writeUSB(){return;const h=dirH;if(!h)return;const data=JSON.stringify(db,null,1);
 usbQ=usbQ.then(async()=>{try{
 try{const old=await(await(await h.getFileHandle(DATAF)).getFile()).text();if(old)await wfile(h,BAKF,old)}catch(e){}
 await wfile(h,DATAF,data);await wfile(h,JSF,"window.__METAV_DATA="+data+";\n");
 $("fstat").textContent="✔ Αποθηκεύτηκε στο USB "+new Date().toLocaleTimeString("el-GR")}
 catch(e){$("fstat").textContent="⚠ Αποτυχία αποθήκευσης στο USB – τα δεδομένα μένουν στον browser";console.warn(e)}})}
-async function connect(h){let d=null;try{d=JSON.parse(await(await(await h.getFileHandle(DATAF)).getFile()).text())}catch(e){}
+async function connect(h){return;let d=null;try{d=JSON.parse(await(await(await h.getFileHandle(DATAF)).getFile()).text())}catch(e){}
 if(d&&d.records&&(d.savedAt||0)>(db.savedAt||0)){db=d;if(!db.partners)db.partners=DEFP.slice();migrate();localStorage.setItem(KEY,JSON.stringify(db));fillSelects();render()}
 dirH=h;pendH=null;idbSet("dir",h);setStore();writeUSB()}
 function usbSave(){if(dirH){clearTimeout(usbT);usbT=setTimeout(writeUSB,300);return}
 }
-async function pickDir(){try{const h=await window.showDirectoryPicker({id:"metavivaseis",mode:"readwrite"});
+async function pickDir(){return;try{const h=await window.showDirectoryPicker({id:"metavivaseis",mode:"readwrite"});
 if((await h.requestPermission({mode:"readwrite"}))!="granted")return alert("Δεν δόθηκε άδεια εγγραφής.");await connect(h)}catch(e){if(e.name!="AbortError")alert("Σφάλμα: "+e.message)}}
-async function initUSB(){setStore();if(!window.showDirectoryPicker||!window.indexedDB)return;if($("dirBtn"))$("dirBtn").style.display="";
+async function initUSB(){setStore();if(!window.indexedDB)return;try{const d=await idb();d.transaction("h","readwrite").objectStore("h").delete("dir")}catch(e){}return;if($("dirBtn"))$("dirBtn").style.display="";
 let h=null;try{h=await idbGet("dir")}catch(e){}if(!h)return;
 let p="prompt";try{p=await h.queryPermission({mode:"readwrite"})}catch(e){}
 if(p=="granted")await connect(h)}
