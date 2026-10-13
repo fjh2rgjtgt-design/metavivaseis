@@ -57,7 +57,7 @@ main table,#rm table{display:block}main tbody,#rm tbody{display:block}
 .tot{font-size:18px}
 }
 </style></head><body>
-<header><h1>🚗 Μεταβιβάσεις Οχημάτων <small id="appVer" style="font-size:11px;font-weight:400;opacity:.6">v9</small></h1>
+<header><h1>🚗 Μεταβιβάσεις Οχημάτων <small id="appVer" style="font-size:11px;font-weight:400;opacity:.6">v10</small></h1>
 <button type="button" class="sec" id="menuBtn" onclick="this.parentNode.classList.toggle('open')">☰ Μενού</button>
 <div id="mbar"><input id="mq" type="search" placeholder="Αναζήτηση..." oninput="$('q').value=this.value;render()"><button type="button" class="sec" onclick="document.body.classList.toggle('showf')">Φίλτρα</button><button type="button" class="ok" onclick="openForm()">+ Νέα</button></div>
 <button type="button" class="hx ok" onclick="openForm()">+ Νέα καταχώρηση</button>
@@ -410,5 +410,39 @@ function bkPrompt(){var o=document.getElementById("bkPr");if(o)o.remove();o=docu
 o.style.cssText="position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:99999;background:#1f4e79;color:#fff;padding:12px 16px;border-radius:10px;display:flex;gap:10px;align-items:center;max-width:92%";
 o.innerHTML='<span>Έτοιμο για αντίγραφο.</span><button type="button" class="ok" id="bkPrBtn">Αποστολή αντιγράφου</button><button type="button" class="sec" id="bkPrX">✕</button>';
 document.body.appendChild(o);document.getElementById("bkPrBtn").onclick=function(){o.remove();bkExport()};document.getElementById("bkPrX").onclick=function(){o.remove()}}
+</script>
+<script>
+(function(){
+var AWF="metavivaseis_web_data.json",FORBID=["metavivaseis_data.json","metavivaseis_data.js"],awH=null,awOn=false;
+if(FORBID.indexOf(AWF.toLowerCase())>=0)throw new Error("forbidden autosave name");
+function idb(){return new Promise(function(res,rej){var r=indexedDB.open("mv_autosave",1);r.onupgradeneeded=function(){r.result.createObjectStore("kv")};r.onsuccess=function(){res(r.result)};r.onerror=function(){rej(r.error)}})}
+function kv(op,k,v){return idb().then(function(d){return new Promise(function(res,rej){var t=d.transaction("kv",op=="get"?"readonly":"readwrite"),s=t.objectStore("kv"),q=op=="get"?s.get(k):op=="del"?s.delete(k):s.put(v,k);q.onsuccess=function(){res(q.result)};q.onerror=function(){rej(q.error)}})})}
+function el(id){return document.getElementById(id)}
+function ui(){var b=el("awBox");if(!b)return;el("awName").textContent=awH?("Φάκελος: "+awH.name):"Δεν έχει επιλεγεί φάκελος";el("awOff").style.display=awH?"":"none"}
+function badge(t,ok,click){var b=el("awBadge");if(!b){b=document.createElement("div");b.id="awBadge";b.style.cssText="position:fixed;right:10px;bottom:10px;z-index:9998;font-size:13px;padding:6px 10px;border-radius:14px;cursor:default;box-shadow:0 1px 4px rgba(0,0,0,.2)";document.body.appendChild(b)}
+b.textContent=t;b.style.background=ok?"#e8f5e9":"#fff3e0";b.style.color=ok?"#2e7d32":"#e65100";b.style.cursor=click?"pointer":"default";b.onclick=click||null}
+function hhmm(){var d=new Date();return ("0"+d.getHours()).slice(-2)+":"+("0"+d.getMinutes()).slice(-2)}
+function needPerm(){badge("Η αυτόματη αποθήκευση στο OneDrive χρειάζεται άδεια — πάτα εδώ",0,function(){
+ var p;try{p=awH.requestPermission({mode:"readwrite"})}catch(e){console.error(e);return}
+ Promise.resolve(p).then(function(s){if(s=="granted")write(true);else needPerm()},function(e){console.error("autosave permission",e);needPerm()})})}
+function write(force){if(!awH||!awOn)return Promise.resolve();
+ var txt;try{txt=JSON.stringify(db,null,2)}catch(e){return Promise.resolve()}
+ return Promise.resolve(awH.queryPermission?awH.queryPermission({mode:"readwrite"}):"granted").then(function(p){if(p!="granted"){needPerm();return}
+  if(FORBID.indexOf(AWF.toLowerCase())>=0)throw new Error("forbidden");
+  return awH.getFileHandle(AWF,{create:true}).then(function(fh){return fh.createWritable()}).then(function(w){return w.write(new Blob([txt],{type:"application/json"})).then(function(){return w.close()})}).then(function(){badge("✔ OneDrive "+hhmm(),1)})
+ }).catch(function(e){console.warn("autosave write failed",e);needPerm()})}
+window.awWrite=function(){setTimeout(function(){write()},0)};
+window.awPick=function(){var p;try{p=showDirectoryPicker({id:"metavivaseis-backup",mode:"readwrite"})}catch(e){console.error(e);return}
+ Promise.resolve(p).then(function(h){awH=h;awOn=true;ui();kv("put","dir",h).catch(function(e){console.warn("autosave: cannot store folder handle",e)});return write(true)}).catch(function(e){if(e&&e.name==="AbortError")return;console.error("autosave pick",e);bkMsg("Σφάλμα επιλογής φακέλου: "+((e&&e.message)||e),0)})};
+window.awDisable=function(){awH=null;awOn=false;kv("del","dir").catch(function(){});ui();var b=el("awBadge");if(b)b.remove()};
+window.__awSet=function(h){awH=h;awOn=true;ui()};
+function wrap(n){var f=window[n];if(typeof f!="function")return;window[n]=function(){var r=f.apply(this,arguments);try{window.awWrite()}catch(e){}return r}}
+if(!window.showDirectoryPicker)return;
+var sm=el("sm"),card=sm&&sm.querySelector(".card");if(card){var d=document.createElement("div");d.id="awBox";d.style.cssText="border-top:2px solid #ccd;margin-top:16px;padding-top:8px";
+ d.innerHTML='<h2>Αυτόματη αποθήκευση στο OneDrive (laptop)</h2><p style="font-size:14px;color:#555">Μετά από κάθε αποθήκευση γράφεται το '+AWF+' στον φάκελο που θα διαλέξεις (π.χ. OneDrive\\Metavivaseis).</p><p id="awName" style="font-size:14px"></p><p><button type="button" class="ok" onclick="awPick()">Επιλογή φακέλου</button> <button type="button" class="del" id="awOff" onclick="awDisable()">Απενεργοποίηση</button></p>';
+ card.appendChild(d)}
+["saveRec0","delRec","delRow"].forEach(wrap);
+kv("get","dir").then(function(h){if(h){awH=h;awOn=true;ui();return Promise.resolve(h.queryPermission({mode:"readwrite"})).then(function(p){if(p!="granted")needPerm()})}ui()}).catch(function(){ui()});
+})();
 </script>
 </body></html>
