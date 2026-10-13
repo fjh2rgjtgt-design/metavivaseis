@@ -67,7 +67,7 @@ main table,#rm table{display:block}main tbody,#rm tbody{display:block}
 .tot{font-size:18px}
 }
 </style></head><body>
-<header><h1>🚗 Μεταβιβάσεις Οχημάτων <small id="appVer" style="font-size:11px;font-weight:400;opacity:.6">v18</small></h1>
+<header><h1>🚗 Μεταβιβάσεις Οχημάτων <small id="appVer" style="font-size:11px;font-weight:400;opacity:.6">v19</small></h1>
 <button type="button" class="sec" id="menuBtn" onclick="this.parentNode.classList.toggle('open')">☰ Μενού</button>
 <div id="mbar"><input id="mq" type="search" placeholder="Αναζήτηση..." oninput="$('q').value=this.value;render()"><button type="button" class="sec" onclick="document.body.classList.toggle('showf')">Φίλτρα</button><button type="button" class="ok" onclick="openForm()">+ Νέα</button></div>
 <button type="button" class="hx ok" onclick="openForm()">+ Νέα καταχώρηση</button>
@@ -128,11 +128,12 @@ main table,#rm table{display:block}main tbody,#rm tbody{display:block}
 <p><button type="button" class="sec" onclick="closeM('rm')">Κλείσιμο</button></p></div></div>
 <div class="modal" id="xm"><div class="card" style="max-width:1200px"><h2>Έξοδα &amp; Λογαριασμοί</h2>
 <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:end;font-size:15px">
-<div><label>Κατηγορία</label><select id="xfc" onchange="renderBills()"><option value="">Όλες</option><option>Επαγγελματικό</option><option>Προσωπικό</option></select></div>
+<div><label>Πάροχος</label><select id="xfpr" onchange="renderBills()"><option value="">Όλοι</option></select></div>
+<div style="font-size:14px"><label>Κατηγορία</label><select id="xfc" onchange="renderBills()" style="font-size:15px"><option value="">Όλες</option><option>Επαγγελματικό</option><option>Προσωπικό</option></select></div>
 <div><label>Ιδιοκτήτης</label><select id="xfo" onchange="renderBills()"><option value="">Όλοι</option></select></div>
 <div><label>Κατάσταση</label><select id="xfs" onchange="renderBills()"><option value="">Όλα</option><option value="unpaid">Ανέξοφλα</option><option value="overdue">Ληξιπρόθεσμα</option><option value="paid">Πληρωμένα</option></select></div>
 <div><label>Από</label><input type="date" id="xd1" onchange="renderBills()"></div><div><label>Έως</label><input type="date" id="xd2" onchange="renderBills()"></div>
-<div><button type="button" class="ok" onclick="gxEditForm()">+ Νέο έξοδο</button> <button type="button" class="sec" onclick="window.__xRet={top:$('xm').scrollTop};$('xm').style.display='none';openSettings()">Ενοίκιο (κανόνας)</button></div></div>
+<div><button type="button" class="ok" onclick="gxEditForm()">+ Νέο έξοδο</button> <button type="button" class="sec" onclick="openRent()">Ενοίκιο (κανόνας)</button></div></div>
 <p id="xtot" style="font-weight:700;font-size:17px"></p>
 <div id="xform" class="card" style="display:none;background:#f5f7fa"><h3 id="xftitle"></h3><div class="grid">
 <div><label>Ημερομηνία</label><input type="date" id="x_date"></div><div><label>Ποσό (€) *</label><input type="number" step="0.01" id="x_amount" oninput="gxMan(this)"></div>
@@ -143,6 +144,11 @@ main table,#rm table{display:block}main tbody,#rm tbody{display:block}
 <p><button type="button" class="ok" onclick="gxSaveForm()">Αποθήκευση</button> <button type="button" class="sec" onclick="$('xform').style.display='none'">Ακύρωση</button></p></div>
 <div style="overflow:auto"><table><thead><tr><th>Ημ/νία</th><th>Περιγραφή</th><th>Ιδιοκτήτης</th><th>Κατηγορία</th><th>Ποσό</th><th>Έκδοση</th><th>Λήξη</th><th>RF</th><th>Κατάσταση</th><th></th></tr></thead><tbody id="xlist"></tbody></table></div>
 <p><button type="button" class="sec" onclick="closeM('xm')">Κλείσιμο</button></p></div></div>
+<div class="modal" id="rentm" style="z-index:11"><div class="card" style="max-width:480px"><h2>Ενοίκιο – κανόνας</h2>
+<div class="grid"><div><label>Περιγραφή</label><input id="r_label" autocomplete="off"></div><div><label>Ποσό (€)</label><input id="r_amount" type="number" step="0.01"></div>
+<div><label>Ημέρα του μήνα</label><input id="r_day" type="number" min="1" max="31"></div><div><label>Από μήνα</label><input id="r_start" type="month"></div>
+<div><label>Κατηγορία</label><select id="r_cat"><option>Επαγγελματικό</option><option>Προσωπικό</option></select></div><div><label><input type="checkbox" id="r_act" style="width:auto"> Ενεργό</label></div></div>
+<p><button type="button" class="ok" onclick="saveRent()">Αποθήκευση</button> <button type="button" class="sec" onclick="closeRent()">Κλείσιμο</button></p></div></div>
 <div class="modal" id="sm"><div class="card"><h2>Ρυθμίσεις – Συνεργάτες</h2>
 <div id="plist"></div><label>Νέος συνεργάτης</label><input id="newp">
 <p><button type="button" class="ok" onclick="addPartner()">Προσθήκη</button> <button type="button" class="sec" onclick="closeM('sm')">Κλείσιμο</button></p>
@@ -275,7 +281,7 @@ persist();closeM("fm");render();mvAfterSave(cur?cur.id:db.records[db.records.len
 function mvAfterSave(id){try{if(!filtered().some(r=>r.id==id)){["q","mq","df","dt","fp","fs","ft","fj"].forEach(x=>{const e=$(x);if(e)e.value=""});render()}
 const tr=[...document.querySelectorAll("#list tr")].find(t=>(t.getAttribute("onclick")||"").indexOf("'"+id+"'")>=0);
 if(tr){tr.scrollIntoView({block:"center"});tr.style.transition="background 1.5s";tr.style.background="#fff59d";setTimeout(()=>{tr.style.background=""},1600)}else window.scrollTo(0,0)}catch(e){console.error(e)}}
-function mvRefresh(){try{if(["fm","rm","sm","xm"].some(m=>{const e=$(m);return e&&e.style.display&&e.style.display!="none"}))return;load();fillSelects();render()}catch(e){console.error(e)}}
+function mvRefresh(){try{if(["fm","rm","sm","xm","rentm"].some(m=>{const e=$(m);return e&&e.style.display&&e.style.display!="none"}))return;load();fillSelects();render()}catch(e){console.error(e)}}
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState=="visible")mvRefresh()});
 window.addEventListener("pageshow",e=>{if(e.persisted)mvRefresh()});
 window.addEventListener("storage",e=>{if(e.key===KEY||e.key===null)mvRefresh()});
@@ -286,9 +292,9 @@ function gxBiz(L){return L.filter(e=>(e.category||"Επαγγελματικό")!
 let xEdit=null;
 function openBills(){const own=[...new Set((db.generalExpenses||[]).map(e=>e.owner).filter(Boolean))];
 const o=$("xfo"),ov=o.value;o.innerHTML='<option value="">Όλοι</option>'+own.map(x=>`<option>${esc(x)}</option>`).join("");o.value=ov;
-$("xprList").innerHTML=[...new Set((db.providers||[]).map(p=>p.name).concat((db.generalExpenses||[]).map(e=>e.provider)).filter(Boolean))].map(x=>`<option value="${esc(x)}">`).join("");$("xfoList").innerHTML=own.map(x=>`<option value="${esc(x)}">`).join("");renderBills();$("xm").style.display="flex"}
-function billsFiltered(){const c=$("xfc").value,o=$("xfo").value,st=$("xfs").value,d1=$("xd1").value,d2=$("xd2").value;
-return (db.generalExpenses||[]).map(gxNorm).filter(e=>(!c||e.category==c)&&(!o||e.owner==o)&&(!st||(st=="paid"?e.paid:st=="unpaid"?!e.paid:(!e.paid&&e.dueDate&&e.dueDate<today())))&&(!d1||(e.date||"")>=d1)&&(!d2||(e.date||"")<=d2))
+$("xprList").innerHTML=[...new Set((db.providers||[]).map(p=>p.name).concat((db.generalExpenses||[]).map(e=>e.provider)).filter(Boolean))].map(x=>`<option value="${esc(x)}">`).join("");{const ps=[...new Set((db.providers||[]).map(p=>p.name).concat((db.generalExpenses||[]).map(e=>e.provider)).filter(Boolean))],f=$("xfpr"),fv=f.value;f.innerHTML='<option value="">Όλοι</option>'+ps.map(x=>`<option>${esc(x)}</option>`).join("");f.value=fv}$("xfoList").innerHTML=own.map(x=>`<option value="${esc(x)}">`).join("");renderBills();$("xm").style.display="flex"}
+function billsFiltered(){const pr=$("xfpr").value,c=$("xfc").value,o=$("xfo").value,st=$("xfs").value,d1=$("xd1").value,d2=$("xd2").value;
+return (db.generalExpenses||[]).map(gxNorm).filter(e=>(!pr||gxPv(e.provider)==gxPv(pr))&&(!c||e.category==c)&&(!o||e.owner==o)&&(!st||(st=="paid"?e.paid:st=="unpaid"?!e.paid:(!e.paid&&e.dueDate&&e.dueDate<today())))&&(!d1||(e.date||"")>=d1)&&(!d2||(e.date||"")<=d2))
 .sort((a,b)=>(b.dueDate||b.date||"").localeCompare(a.dueDate||a.date||""))}
 function renderBills(){const L=billsFiltered(),sum=a=>a.reduce((t,e)=>t+(+e.amount||0),0);
 $("xlist").innerHTML=L.map(e=>{const s=gxStatus(e);return `<tr><td data-label="Ημ/νία">${fdate(e.date)}</td><td data-label="Περιγραφή">${(()=>{const det=[e.label&&e.label!=e.provider?e.label:"",e.afm?"ΑΦΜ: "+e.afm:"",e.notes||""].filter(Boolean).join("\n");return `<b>${esc(e.provider||e.label||"Έξοδο")}</b>${e.auto?" (αυτόματο)":""}${det?` <button type="button" class="xi" title="Σημειώσεις" onclick="this.nextElementSibling.classList.toggle('on')">ⓘ</button><div class="xn">${esc(det)}</div>`:""}`})()}</td><td data-label="Ιδιοκτήτης">${esc(e.owner)}</td><td data-label="Κατηγορία">${esc(e.category)}</td><td data-label="Ποσό"><b>${eur(e.amount)}</b></td><td data-label="Έκδοση">${fdate(e.issueDate)}</td><td data-label="Λήξη">${fdate(e.dueDate)}</td><td data-label="RF">${e.rf?`<code style="font-size:13px">${esc(e.rf)}</code> <button type="button" class="sec" onclick="gxCopy('${esc(e.rf)}')">Αντιγραφή</button>`:""}</td><td data-label="Κατάσταση"><span class="st" style="background:${s[1]};color:#fff">${s[0]}</span>${e.paid&&e.paidDate?`<div style="font-size:12px">${fdate(e.paidDate)}</div>`:""}</td><td class="act">${e.paid?"":`<button type="button" class="ok" onclick="gxPaid('${esc(e.id)}')">Πληρώθηκε</button>`}<button type="button" class="sec" onclick="gxEditForm('${esc(e.id)}')">Επεξεργασία</button><button type="button" class="del" onclick="gxDel('${esc(e.id)}')">Διαγραφή</button></td></tr>`}).join("")||'<tr><td colspan="10">Δεν υπάρχουν έξοδα.</td></tr>';
@@ -338,13 +344,17 @@ if(open&&!locked){y=window.scrollY||0;document.body.style.top=(-y)+"px";document
 else if(!open&&locked){document.body.classList.remove("mlock");document.body.style.top="";window.scrollTo(0,y);locked=false}}
 const mo=new MutationObserver(chk);document.addEventListener("DOMContentLoaded",()=>document.querySelectorAll(".modal").forEach(m=>mo.observe(m,{attributes:true,attributeFilter:["style"]})));
 if(document.readyState!="loading")document.querySelectorAll(".modal").forEach(m=>mo.observe(m,{attributes:true,attributeFilter:["style"]}))})();
+function openRent(){if(!db.recurring||!db.recurring.length)db.recurring=[{id:"rent",label:"Ενοίκιο",amount:270,day:28,startMonth:"2026-10",active:true}];const r=db.recurring[0];
+$("r_label").value=r.label||"";$("r_amount").value=r.amount??"";$("r_day").value=r.day||"";$("r_start").value=r.startMonth||"";$("r_cat").value=r.category||"Επαγγελματικό";$("r_act").checked=!!r.active;$("rentm").style.display="flex"}
+function saveRent(){const r=db.recurring[0];r.label=$("r_label").value.trim()||"Ενοίκιο";r.amount=+$("r_amount").value||0;r.day=Math.max(1,Math.min(31,+$("r_day").value||1));if(/^\d{4}-\d{2}$/.test($("r_start").value))r.startMonth=$("r_start").value;r.category=$("r_cat").value;r.active=$("r_act").checked;persist();gxRun();render();try{awWrite()}catch(e){}closeRent()}
+function closeRent(){closeM("rentm");if($("xm").style.display=="flex"){const t=$("xm").scrollTop;openBills();$("xm").scrollTop=t}}
 function gxYM(d){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")}
 function gxRun(){try{if(!db.recurring||!db.generalExpenses)return;const now=new Date(),cur=gxYM(now);let ch=false;
 db.recurring.forEach(rl=>{if(!rl.active||!rl.startMonth)return;rl.skip=rl.skip||[];let [y,m]=rl.startMonth.split("-").map(Number);
 for(let g=0;g<600;g++){const ym=y+"-"+String(m).padStart(2,"0");if(ym>cur)break;
  const last=new Date(y,m,0).getDate(),day=Math.min(+rl.day||1,last),due=new Date(y,m-1,day);
  if(now>=due&&!rl.skip.includes(ym)&&!db.generalExpenses.some(e=>e.ruleId==rl.id&&(e.date||"").slice(0,7)==ym)){
-  db.generalExpenses.push({id:"gx_"+rl.id+"_"+ym,date:ym+"-"+String(day).padStart(2,"0"),amount:+rl.amount||0,label:rl.label||"",auto:true,ruleId:rl.id,category:"Επαγγελματικό",owner:"",provider:rl.label||"",dueDate:ym+"-"+String(day).padStart(2,"0"),rf:"",paid:false,paidDate:""});ch=true}
+  db.generalExpenses.push({id:"gx_"+rl.id+"_"+ym,date:ym+"-"+String(day).padStart(2,"0"),amount:+rl.amount||0,label:rl.label||"",auto:true,ruleId:rl.id,category:rl.category||"Επαγγελματικό",owner:"",provider:rl.label||"",dueDate:ym+"-"+String(day).padStart(2,"0"),rf:"",paid:false,paidDate:""});ch=true}
  m++;if(m>12){m=1;y++}}});
 if(ch){localStorage.setItem(KEY,JSON.stringify(db));try{window.awWrite&&awWrite()}catch(e){}}}catch(e){console.error("gxRun",e)}}
 function gxSame(a,b){if(!a||!b||a===b)return false;if(a.rf&&b.rf&&String(a.rf).replace(/\s/g,"")==String(b.rf).replace(/\s/g,""))return true;
