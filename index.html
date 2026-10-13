@@ -57,7 +57,7 @@ main table,#rm table{display:block}main tbody,#rm tbody{display:block}
 .tot{font-size:18px}
 }
 </style></head><body>
-<header><h1>🚗 Μεταβιβάσεις Οχημάτων <small id="appVer" style="font-size:11px;font-weight:400;opacity:.6">v14</small></h1>
+<header><h1>🚗 Μεταβιβάσεις Οχημάτων <small id="appVer" style="font-size:11px;font-weight:400;opacity:.6">v15</small></h1>
 <button type="button" class="sec" id="menuBtn" onclick="this.parentNode.classList.toggle('open')">☰ Μενού</button>
 <div id="mbar"><input id="mq" type="search" placeholder="Αναζήτηση..." oninput="$('q').value=this.value;render()"><button type="button" class="sec" onclick="document.body.classList.toggle('showf')">Φίλτρα</button><button type="button" class="ok" onclick="openForm()">+ Νέα</button></div>
 <button type="button" class="hx ok" onclick="openForm()">+ Νέα καταχώρηση</button>
@@ -303,9 +303,20 @@ for(let g=0;g<600;g++){const ym=y+"-"+String(m).padStart(2,"0");if(ym>cur)break;
   db.generalExpenses.push({id:"gx_"+rl.id+"_"+ym,date:ym+"-"+String(day).padStart(2,"0"),amount:+rl.amount||0,label:rl.label||"",auto:true,ruleId:rl.id,category:"Επαγγελματικό",owner:"",provider:rl.label||"",dueDate:ym+"-"+String(day).padStart(2,"0"),rf:"",paid:false,paidDate:""});ch=true}
  m++;if(m>12){m=1;y++}}});
 if(ch){localStorage.setItem(KEY,JSON.stringify(db));try{window.awWrite&&awWrite()}catch(e){}}}catch(e){console.error("gxRun",e)}}
-function gxMerge(inc){if(!db.generalExpenses)db.generalExpenses=[];if(!db.recurring)db.recurring=[];
-(inc.generalExpenses||[]).forEach(e=>{if(!e||typeof e!="object")return;const ex=db.generalExpenses.find(x=>x.id==e.id);if(ex){Object.assign(ex,JSON.parse(JSON.stringify(e)));return}
- if(e.ruleId&&db.generalExpenses.some(x=>x.ruleId==e.ruleId&&(x.date||"").slice(0,7)==(e.date||"").slice(0,7)))return;db.generalExpenses.push(JSON.parse(JSON.stringify(e)))});
+function gxSame(a,b){if(!a||!b||a===b)return false;if(a.rf&&b.rf&&String(a.rf).replace(/\s/g,"")==String(b.rf).replace(/\s/g,""))return true;
+return !!(a.dueDate&&b.dueDate&&a.dueDate==b.dueDate&&Math.abs((+a.amount||0)-(+b.amount||0))<=0.01)}
+function gxMerge(inc){if(!db.generalExpenses)db.generalExpenses=[];if(!db.recurring)db.recurring=[];const imp=new Set();
+(inc.generalExpenses||[]).forEach(e=>{if(!e||typeof e!="object")return;const ne=JSON.parse(JSON.stringify(e));
+ let ex=db.generalExpenses.find(x=>x.id==ne.id);
+ if(!ex&&!(ne.ruleId&&ne.auto))ex=db.generalExpenses.find(x=>!imp.has(x.id)&&gxSame(x,ne));
+ if(ex){if(ex.id==ne.id)Object.assign(ex,ne);else{Object.keys(ex).forEach(k=>delete ex[k]);Object.assign(ex,ne)}gxNorm(ex);imp.add(ex.id);return}
+ if(ne.ruleId&&db.generalExpenses.some(x=>x.ruleId==ne.ruleId&&(x.date||"").slice(0,7)==(ne.date||"").slice(0,7)))return;
+ db.generalExpenses.push(gxNorm(ne));imp.add(ne.id)});
+// collapse duplicates (same rf or same dueDate+amount): keep imported one, else the later entry
+const G=db.generalExpenses,drop=new Set();
+for(let a=0;a<G.length;a++)for(let b=a+1;b<G.length;b++){if(drop.has(G[a])||drop.has(G[b])||!gxSame(G[a],G[b]))continue;
+ const keepB=imp.has(G[b].id)||!imp.has(G[a].id);drop.add(keepB?G[a]:G[b])}
+if(drop.size)db.generalExpenses=G.filter(x=>!drop.has(x));
 (inc.recurring||[]).forEach(r=>{if(r&&!db.recurring.some(x=>x.id==r.id))db.recurring.push(JSON.parse(JSON.stringify(r)))})}
 function gxPeriod(){const D1=$("df").value,D2=$("dt").value;return (db.generalExpenses||[]).filter(e=>(!D1||(e.date||"")>=D1)&&(!D2||(e.date||"")<=D2))}
 function gxPeriodSum(){return gxBiz(gxPeriod()).reduce((a,e)=>a+(+e.amount||0),0)}
