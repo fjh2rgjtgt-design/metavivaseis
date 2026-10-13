@@ -57,7 +57,7 @@ main table,#rm table{display:block}main tbody,#rm tbody{display:block}
 .tot{font-size:18px}
 }
 </style></head><body>
-<header><h1>🚗 Μεταβιβάσεις Οχημάτων</h1>
+<header><h1>🚗 Μεταβιβάσεις Οχημάτων <small id="appVer" style="font-size:11px;font-weight:400;opacity:.6">v7</small></h1>
 <button type="button" class="sec" id="menuBtn" onclick="this.parentNode.classList.toggle('open')">☰ Μενού</button>
 <div id="mbar"><input id="mq" type="search" placeholder="Αναζήτηση..." oninput="$('q').value=this.value;render()"><button type="button" class="sec" onclick="document.body.classList.toggle('showf')">Φίλτρα</button><button type="button" class="ok" onclick="openForm()">+ Νέα</button></div>
 <button type="button" class="hx ok" onclick="openForm()">+ Νέα καταχώρηση</button>
@@ -337,7 +337,7 @@ async function odInit(){const b=$("odBtn");if(!b)return;if(!OD_ON){b.title="Χρ
  document.addEventListener("visibilitychange",()=>{if(odAcc&&document.visibilityState=="visible"&&!odBusy)odPull().catch(()=>{})})}
 function odMenu(){if(confirm("Συγχρονισμός τώρα με το OneDrive;\n(Άκυρο = επιλογή αποσύνδεσης)")){odPull().catch(e=>odChip("err",e.message));return}
  if(confirm("Αποσύνδεση από το OneDrive; Τα δεδομένα μένουν στο OneDrive και σε αυτή τη συσκευή."))odApp.logoutRedirect({account:odAcc})}
-if("serviceWorker" in navigator&&location.protocol=="https:")navigator.serviceWorker.register("sw.js").catch(()=>{});
+if("serviceWorker" in navigator&&location.protocol=="https:"){navigator.serviceWorker.register("sw.js",{updateViaCache:"none"}).then(function(r){try{r.update()}catch(e){}}).catch(()=>{});var hadC=!!navigator.serviceWorker.controller,rl=false;navigator.serviceWorker.addEventListener("controllerchange",function(){if(hadC&&!rl&&!sessionStorage.getItem("mv_rl")){rl=true;sessionStorage.setItem("mv_rl","1");location.reload()}})}
 odInit();
 
 </script><script>
@@ -348,11 +348,12 @@ function bkDownload(txt,name){try{var blob=new Blob([txt||JSON.stringify(db,null
 var w=null;if(bkIOS())w=window.open(u,"_blank");
 if(!w){var a=document.createElement("a");a.href=u;a.download=name;a.rel="noopener";document.body.appendChild(a);a.click();a.remove()}
 setTimeout(function(){URL.revokeObjectURL(u)},60000);bkMsg("Η λήψη ξεκίνησε",1)}catch(e){bkMsg("Σφάλμα λήψης: "+(e.message||e),0)}}
-function bkSaveDl(){var name=bkName(),txt=JSON.stringify(db,null,2);
-if(window.showSaveFilePicker){var pr;try{pr=showSaveFilePicker({id:"metavivaseis-backup",suggestedName:name,types:[{description:"JSON",accept:{"application/json":[".json"]}}]})}catch(e){bkDownload(txt,name);return}
-Promise.resolve(pr).then(function(h){return h.createWritable().then(function(w){return w.write(new Blob([txt],{type:"application/json"})).then(function(){return w.close()})})}).then(function(){bkMsg("Αποθηκεύτηκε",1)},function(e){if(e&&e.name==="AbortError")return;bkDownload(txt,name)});return}
-bkExport()}
-function bkExport(){var name=bkName(),txt=JSON.stringify(db,null,2),file=null;
+function bkMobile(){return bkIOS()||/Android|Mobi/i.test(navigator.userAgent)}
+function bkPick(name,txt){var pr;try{pr=window.showSaveFilePicker({id:"metavivaseis-backup",suggestedName:name,types:[{description:"JSON",accept:{"application/json":[".json"]}}]})}catch(e){bkPickErr(e,name,txt);return}
+Promise.resolve(pr).then(function(h){return h.createWritable().then(function(w){return w.write(new Blob([txt],{type:"application/json"})).then(function(){return w.close()})})}).then(function(){bkMsg("Αποθηκεύτηκε",1)},function(e){bkPickErr(e,name,txt)})}
+function bkPickErr(e,name,txt){if(e&&e.name==="AbortError")return;console.error("showSaveFilePicker error:",e);bkMsg("Σφάλμα παραθύρου αποθήκευσης: "+((e&&e.name)||"")+" "+((e&&e.message)||e)+" — γίνεται λήψη",0);bkDownload(txt,name)}
+function bkSaveDl(){var name=bkName(),txt=JSON.stringify(db,null,2);if(window.showSaveFilePicker&&!bkMobile()){bkPick(name,txt);return}bkExport()}
+function bkExport(){var name=bkName(),txt=JSON.stringify(db,null,2),file=null;if(window.showSaveFilePicker&&!bkMobile()){bkPick(name,txt);return}
 try{if(typeof File==="function"&&navigator.canShare&&navigator.share){var f1=new File([txt],name,{type:"application/json"});
 if(navigator.canShare({files:[f1]}))file=f1;else{var f2=new File([txt],name,{type:"text/plain"});if(navigator.canShare({files:[f2]}))file=f2}}}catch(e){file=null}
 if(file){var pr;try{pr=navigator.share({files:[file]})}catch(e){if(e&&e.name==="AbortError")return;bkDownload(txt,name);return}
