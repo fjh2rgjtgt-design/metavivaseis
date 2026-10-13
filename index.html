@@ -67,7 +67,7 @@ main table,#rm table{display:block}main tbody,#rm tbody{display:block}
 .tot{font-size:18px}
 }
 </style></head><body>
-<header><h1>🚗 Μεταβιβάσεις Οχημάτων <small id="appVer" style="font-size:11px;font-weight:400;opacity:.6">v17</small></h1>
+<header><h1>🚗 Μεταβιβάσεις Οχημάτων <small id="appVer" style="font-size:11px;font-weight:400;opacity:.6">v18</small></h1>
 <button type="button" class="sec" id="menuBtn" onclick="this.parentNode.classList.toggle('open')">☰ Μενού</button>
 <div id="mbar"><input id="mq" type="search" placeholder="Αναζήτηση..." oninput="$('q').value=this.value;render()"><button type="button" class="sec" onclick="document.body.classList.toggle('showf')">Φίλτρα</button><button type="button" class="ok" onclick="openForm()">+ Νέα</button></div>
 <button type="button" class="hx ok" onclick="openForm()">+ Νέα καταχώρηση</button>
@@ -135,10 +135,10 @@ main table,#rm table{display:block}main tbody,#rm tbody{display:block}
 <div><button type="button" class="ok" onclick="gxEditForm()">+ Νέο έξοδο</button> <button type="button" class="sec" onclick="window.__xRet={top:$('xm').scrollTop};$('xm').style.display='none';openSettings()">Ενοίκιο (κανόνας)</button></div></div>
 <p id="xtot" style="font-weight:700;font-size:17px"></p>
 <div id="xform" class="card" style="display:none;background:#f5f7fa"><h3 id="xftitle"></h3><div class="grid">
-<div><label>Ημερομηνία</label><input type="date" id="x_date"></div><div><label>Ποσό (€) *</label><input type="number" step="0.01" id="x_amount"></div>
-<div><label>Πάροχος</label><div style="display:flex;gap:4px"><input id="x_provider" list="xprList" placeholder="π.χ. ΔΕΗ, Nova, COSMOTE" onchange="gxPrefill()"><button type="button" class="sec" title="Ρυθμίσεις παρόχων" onclick="gxProvUI()" style="padding:6px 10px">⚙</button></div><datalist id="xprList"></datalist><div id="xprov" style="display:none;background:#fff;border:1px solid #ccd;border-radius:8px;padding:8px;margin-top:4px;font-size:15px"></div></div><div><label>Ιδιοκτήτης</label><input id="x_owner" list="xfoList" onchange="gxPrefill()" placeholder="π.χ. Γιώργος, Πατέρας"><datalist id="xfoList"></datalist></div><div><label>ΑΦΜ</label><input id="x_afm" inputmode="numeric"></div>
-<div><label>Κατηγορία</label><select id="x_category"><option>Επαγγελματικό</option><option>Προσωπικό</option></select></div><div><label>Έκδοση</label><input type="date" id="x_issueDate"></div><div><label>Λήξη</label><input type="date" id="x_dueDate"></div>
-<div><label>Κωδικός πληρωμής (RF)</label><input id="x_rf" oninput="$('x_rfHint').style.display='none'"><div id="x_rfHint" style="display:none;font-size:13px;color:#ef6c00">Κωδικός από προηγούμενο — έλεγξε αν άλλαξε</div></div><div><label>Περιγραφή</label><input id="x_label"></div><div><label>Σημειώσεις</label><input id="x_notes"></div>
+<div><label>Ημερομηνία</label><input type="date" id="x_date"></div><div><label>Ποσό (€) *</label><input type="number" step="0.01" id="x_amount" oninput="gxMan(this)"></div>
+<div><label>Πάροχος</label><div style="display:flex;gap:4px"><input id="x_provider" list="xprList" autocomplete="off" autocorrect="off" spellcheck="false" placeholder="π.χ. ΔΕΗ, Nova, COSMOTE" onchange="gxPrefill()"><button type="button" class="sec" title="Ρυθμίσεις παρόχων" onclick="gxProvUI()" style="padding:6px 10px">⚙</button></div><datalist id="xprList"></datalist><div id="xprov" style="display:none;background:#fff;border:1px solid #ccd;border-radius:8px;padding:8px;margin-top:4px;font-size:15px"></div></div><div><label>Ιδιοκτήτης</label><input id="x_owner" list="xfoList" autocomplete="off" autocorrect="off" spellcheck="false" onchange="gxPrefill()" placeholder="π.χ. Γιώργος, Πατέρας"><datalist id="xfoList"></datalist></div><div><label>ΑΦΜ</label><input id="x_afm" inputmode="numeric" autocomplete="off" autocorrect="off" spellcheck="false" oninput="gxMan(this)"></div>
+<div><label>Κατηγορία</label><select id="x_category" onchange="gxMan(this)"><option>Επαγγελματικό</option><option>Προσωπικό</option></select></div><div><label>Έκδοση</label><input type="date" id="x_issueDate"></div><div><label>Λήξη</label><input type="date" id="x_dueDate" oninput="gxMan(this)"></div>
+<div><label>Κωδικός πληρωμής (RF)</label><input id="x_rf" autocomplete="off" autocorrect="off" spellcheck="false" autocapitalize="characters" oninput="gxMan(this);$('x_rfHint').style.display='none'"><div id="x_rfHint" style="display:none;font-size:13px;color:#ef6c00">Κωδικός από προηγούμενο — έλεγξε αν άλλαξε</div></div><div><label>Περιγραφή</label><input id="x_label" autocomplete="off" autocorrect="off" spellcheck="false" oninput="gxMan(this)"></div><div><label>Σημειώσεις</label><input id="x_notes" autocomplete="off" autocorrect="off" spellcheck="false"></div>
 <div><label><input type="checkbox" id="x_paid" style="width:auto"> Πληρωμένο</label></div><div><label>Ημ. πληρωμής</label><input type="date" id="x_paidDate"></div></div>
 <p><button type="button" class="ok" onclick="gxSaveForm()">Αποθήκευση</button> <button type="button" class="sec" onclick="$('xform').style.display='none'">Ακύρωση</button></p></div>
 <div style="overflow:auto"><table><thead><tr><th>Ημ/νία</th><th>Περιγραφή</th><th>Ιδιοκτήτης</th><th>Κατηγορία</th><th>Ποσό</th><th>Έκδοση</th><th>Λήξη</th><th>RF</th><th>Κατάσταση</th><th></th></tr></thead><tbody id="xlist"></tbody></table></div>
@@ -298,7 +298,7 @@ function gxAfter(){persist();render();if($("xm").style.display=="flex")openBills
 function gxPaid(id){const e=db.generalExpenses.find(x=>x.id==id);if(!e)return;e.paid=true;e.paidDate=today();gxAfter()}
 function gxEditForm(id){xEdit=id?db.generalExpenses.find(x=>x.id==id):null;const e=xEdit||{date:today(),category:"Επαγγελματικό",paid:false};
 ["date","amount","label","category","owner","provider","afm","issueDate","dueDate","rf","paidDate","notes"].forEach(k=>$("x_"+k).value=e[k]??"");$("x_paid").checked=!!e.paid;
-$("x_rfHint").style.display="none";$("x_dueDate").dataset.auto="";$("xprov").style.display="none";$("xftitle").textContent=xEdit?"Επεξεργασία εξόδου":"Νέο έξοδο / λογαριασμός";$("xform").style.display="";$("x_amount").focus()}
+$("x_rfHint").style.display="none";["x_label","x_afm","x_rf","x_category","x_dueDate","x_amount"].forEach(k=>{$(k).dataset.man="";$(k).dataset.auto=""});$("xprov").style.display="none";$("xftitle").textContent=xEdit?"Επεξεργασία εξόδου":"Νέο έξοδο / λογαριασμός";$("xform").style.display="";$("x_amount").focus()}
 function gxEaster(y){const a=y%4,b=y%7,c=y%19,d=(19*c+15)%30,e=(2*a+4*b-d+34)%7,m=Math.floor((d+e+114)/31),dd=((d+e+114)%31)+1;const j=new Date(y,m-1,dd);j.setDate(j.getDate()+13);return j}
 function gxHol(y){const f=["01-01","01-06","03-25","05-01","08-15","10-28","12-25","12-26"].map(x=>y+"-"+x),E=gxEaster(y),add=n=>{const d=new Date(E);d.setDate(d.getDate()+n);return gxD(d)};return new Set(f.concat([add(-48),add(-2),add(0),add(1),add(50)]))}
 function gxD(d){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
@@ -306,16 +306,28 @@ function gxRuleDate(r,y,m){if(!r||!r.type||r.type=="none")return "";const last=n
 if(r.type=="day")return gxD(new Date(y,m,Math.min(Math.max(1,+r.day||1),last)));
 const H=gxHol(y);let d=new Date(y,m,last);while(d.getDay()==0||d.getDay()==6||H.has(gxD(d)))d.setDate(d.getDate()-1);return gxD(d)}
 function gxRuleDue(r){const n=new Date(),t=today();let v=gxRuleDate(r,n.getFullYear(),n.getMonth());if(v&&v<t){const x=new Date(n.getFullYear(),n.getMonth()+1,1);v=gxRuleDate(r,x.getFullYear(),x.getMonth())}return v}
-function gxProv(name){return (db.providers||[]).find(p=>(p.name||"").toLowerCase()==String(name||"").trim().toLowerCase())}
+function gxProv(name){return (db.providers||[]).find(p=>gxPv(p.name)==gxPv(name))}
 function gxProvUI(){const b=$("xprov");if(b.style.display!="none"&&b.dataset.r=="1"){b.style.display="none";b.dataset.r="";return}b.dataset.r="1";b.style.display="";
 b.innerHTML="<b>Πάροχοι – κανόνας λήξης / σταθερό ποσό</b>"+(db.providers||[]).map((p,i)=>`<div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin:4px 0"><span style="min-width:90px;font-weight:600">⚙ ${esc(p.name)}</span><select style="width:auto" onchange="gxProvSet(${i},'type',this.value)"><option value="none"${(p.dueRule||{}).type=="none"||!(p.dueRule||{}).type?" selected":""}>Χωρίς κανόνα</option><option value="lastWorking"${(p.dueRule||{}).type=="lastWorking"?" selected":""}>Τελευταία εργάσιμη του μήνα</option><option value="day"${(p.dueRule||{}).type=="day"?" selected":""}>Συγκεκριμένη μέρα</option></select><input type="number" min="1" max="31" placeholder="Ν" style="width:70px;${(p.dueRule||{}).type=="day"?"":"display:none"}" value="${esc((p.dueRule||{}).day||"")}" onchange="gxProvSet(${i},'day',this.value)"><input type="number" step="0.01" placeholder="Σταθερό ποσό" style="width:130px" value="${esc(p.fixedAmount??"")}" onchange="gxProvSet(${i},'fixedAmount',this.value)"></div>`).join("")
 +`<div style="margin-top:6px"><input id="xprNew" placeholder="Νέος πάροχος" style="width:160px"> <button type="button" class="ok" onclick="gxProvAdd()">Προσθήκη</button></div>`}
 function gxProvSet(i,k,v){const p=db.providers[i];p.dueRule=p.dueRule||{type:"none"};if(k=="type")p.dueRule.type=v;else if(k=="day")p.dueRule.day=+v||"";else p.fixedAmount=v===""?"":+v;persist();try{awWrite()}catch(e){}const b=$("xprov");b.dataset.r="";gxProvUI()}
 function gxProvAdd(){const n=$("xprNew").value.trim();if(!n||gxProv(n))return;db.providers.push({name:n,dueRule:{type:"none"},fixedAmount:""});persist();const b=$("xprov");b.dataset.r="";gxProvUI()}
-function gxPrefill(){if(xEdit)return;const pv=$("x_provider").value.trim().toLowerCase(),ow=$("x_owner").value.trim();if(!pv)return;const P=gxProv(pv);if(P){const due=gxRuleDue(P.dueRule);if(due&&(!$("x_dueDate").value||$("x_dueDate").dataset.auto=="1")){$("x_dueDate").value=due;$("x_dueDate").dataset.auto="1"}if(P.fixedAmount!==""&&P.fixedAmount!=null&&!$("x_amount").value)$("x_amount").value=P.fixedAmount}
-const L=(db.generalExpenses||[]).filter(e=>(e.provider||"").toLowerCase()==pv).sort((a,b)=>(b.issueDate||b.date||"").localeCompare(a.issueDate||a.date||""));
-const src=(ow&&L.find(e=>e.owner==ow))||L[0];if(!src)return;
-if(!ow&&src.owner)$("x_owner").value=src.owner;$("x_afm").value=src.afm||$("x_afm").value;if(src.category)$("x_category").value=src.category;if(!$("x_label").value&&src.label)$("x_label").value=src.label;if(src.rf&&(!$("x_rf").value||$("x_rfHint").style.display!="none")){$("x_rf").value=src.rf;$("x_rfHint").style.display=""}}
+const GXAFM={"γιωργος":"102733808","πατερας":"025593143"};
+function gxOwn(o){return String(o||"").split("(")[0].normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().trim()}
+function gxPv(p){return String(p||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().trim()}
+function gxMan(el){el.dataset.man="1"}
+function gxPrefill(){if(xEdit)return;const pvRaw=$("x_provider").value.trim(),pv=gxPv(pvRaw),ow=gxOwn($("x_owner").value);
+const set=(id,v)=>{const el=$(id);if(el.dataset.man!="1")el.value=v;el.dataset.man=""};
+const byDate=(a,b)=>(b.issueDate||b.date||"").localeCompare(a.issueDate||a.date||"");
+const G=(db.generalExpenses||[]).filter(e=>!e.auto);
+const same=pv?G.filter(e=>gxPv(e.provider)==pv&&gxOwn(e.owner)==ow).sort(byDate)[0]:null;
+const ownAny=ow?G.filter(e=>gxOwn(e.owner)==ow&&e.afm).sort(byDate)[0]:null;
+set("x_label",pvRaw);
+set("x_afm",same&&same.afm?same.afm:(ownAny?ownAny.afm:(GXAFM[ow]||"")));
+set("x_category",same&&same.category?same.category:"Επαγγελματικό");
+const rfMan=$("x_rf").dataset.man=="1";set("x_rf",same&&same.rf?same.rf:"");$("x_rfHint").style.display=(!rfMan&&same&&same.rf)?"":"none";
+const P=pv?gxProv(pvRaw):null,due=P?gxRuleDue(P.dueRule):"";const dd=$("x_dueDate");if(dd.dataset.man!="1"){dd.value=due||(dd.dataset.auto=="1"?"":dd.value);dd.dataset.auto=due?"1":""}dd.dataset.man="";
+const am=$("x_amount");if(am.dataset.man!="1"&&am.dataset.auto=="1")am.value="";if(am.dataset.man!="1"&&P&&P.fixedAmount!==""&&P.fixedAmount!=null){am.value=P.fixedAmount;am.dataset.auto="1"}else if(am.dataset.man!="1")am.dataset.auto="";am.dataset.man=""}
 function gxSaveForm(){const a=+$("x_amount").value;if(!a&&a!==0||$("x_amount").value===""){alert("Συμπληρώστε ποσό.");return}
 const v={date:$("x_date").value||today(),amount:a,label:$("x_label").value.trim(),category:$("x_category").value||"Επαγγελματικό",owner:$("x_owner").value.trim(),provider:$("x_provider").value.trim(),dueDate:$("x_dueDate").value||$("x_date").value||today(),rf:$("x_rf").value.trim(),afm:$("x_afm").value.trim(),issueDate:$("x_issueDate").value,notes:$("x_notes").value.trim(),paid:$("x_paid").checked,paidDate:$("x_paidDate").value};
 if(v.paid&&!v.paidDate)v.paidDate=today();if(!v.paid)v.paidDate="";if(!v.label)v.label=v.provider||"Έξοδο";
