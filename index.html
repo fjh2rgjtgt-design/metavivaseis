@@ -67,7 +67,7 @@ main table,#rm table{display:block}main tbody,#rm tbody{display:block}
 .tot{font-size:18px}
 }
 </style></head><body>
-<header><h1>🚗 Μεταβιβάσεις Οχημάτων <small id="appVer" style="font-size:11px;font-weight:400;opacity:.6">v20</small></h1>
+<header><h1>🚗 Μεταβιβάσεις Οχημάτων <small id="appVer" style="font-size:11px;font-weight:400;opacity:.6">v21</small></h1>
 <button type="button" class="sec" id="menuBtn" onclick="this.parentNode.classList.toggle('open')">☰ Μενού</button>
 <div id="mbar"><input id="mq" type="search" placeholder="Αναζήτηση..." oninput="$('q').value=this.value;render()"><button type="button" class="sec" onclick="document.body.classList.toggle('showf')">Φίλτρα</button><button type="button" class="ok" onclick="openForm()">+ Νέα</button></div>
 <button type="button" class="hx ok" onclick="openForm()">+ Νέα καταχώρηση</button>
@@ -134,7 +134,7 @@ main table,#rm table{display:block}main tbody,#rm tbody{display:block}
 <div><label>Ιδιοκτήτης</label><select id="xfo" onchange="renderBills()"><option value="">Όλοι</option></select></div>
 <div><label>Κατάσταση</label><select id="xfs" onchange="renderBills()"><option value="">Όλα</option><option value="unpaid">Ανέξοφλα</option><option value="overdue">Ληξιπρόθεσμα</option><option value="paid">Πληρωμένα</option></select></div>
 <div><label>Από</label><input type="date" id="xd1" onchange="renderBills()"></div><div><label>Έως</label><input type="date" id="xd2" onchange="renderBills()"></div>
-<div><button type="button" class="ok" onclick="gxEditForm()">+ Νέο έξοδο</button> <button type="button" class="sec" onclick="openRent()">Ενοίκιο (κανόνας)</button></div></div>
+<div><button type="button" class="ok" onclick="gxEditForm()">+ Νέο έξοδο</button> <button type="button" class="sec" onclick="openRent()">Ενοίκιο (κανόνας)</button> <button type="button" class="sec" onclick="exportBillsCSV()">Εξαγωγή λογαριασμών (CSV)</button></div></div>
 <p id="xtot" style="font-weight:700;font-size:17px"></p>
 <div id="xform" class="card" style="display:none;background:#f5f7fa"><h3 id="xftitle"></h3><div class="grid">
 <div><label>Ημερομηνία</label><input type="date" id="x_date"></div><div><label>Ποσό (€) *</label><input type="number" step="0.01" id="x_amount" oninput="gxMan(this)"></div>
@@ -299,6 +299,10 @@ let xEdit=null;
 function openBills(){const own=[...new Set((db.generalExpenses||[]).map(e=>e.owner).filter(Boolean))];
 const o=$("xfo"),ov=o.value;o.innerHTML='<option value="">Όλοι</option>'+own.map(x=>`<option>${esc(x)}</option>`).join("");o.value=ov;
 $("xprList").innerHTML=[...new Set((db.providers||[]).map(p=>p.name).concat((db.generalExpenses||[]).map(e=>e.provider)).filter(Boolean))].map(x=>`<option value="${esc(x)}">`).join("");{const ps=[...new Set((db.providers||[]).map(p=>p.name).concat((db.generalExpenses||[]).map(e=>e.provider)).filter(Boolean))],f=$("xfpr"),fv=f.value;f.innerHTML='<option value="">Όλοι</option>'+ps.map(x=>`<option>${esc(x)}</option>`).join("");f.value=fv}$("xfoList").innerHTML=own.map(x=>`<option value="${esc(x)}">`).join("");renderBills();$("xm").style.display="flex"}
+function exportBillsCSV(){const H=["Ημερομηνία","Πάροχος","Περιγραφή","Ιδιοκτήτης","Κατηγορία","Ποσό (€)","Έκδοση","Λήξη","Κατάσταση","Ημ. πληρωμής","Κωδικός πληρωμής (RF)","ΑΦΜ","Σημειώσεις"];
+const q=s=>'"'+String(s??"").replace(/"/g,'""')+'"',m=v=>v===""||v==null?"":String(v).replace(".",",");
+const rows=billsFiltered().map(e=>[fdate(e.date),e.provider,e.label,e.owner,e.category,m(e.amount),fdate(e.issueDate),fdate(e.dueDate),e.paid?"Πληρωμένο":(e.dueDate&&e.dueDate<today()?"Ληξιπρόθεσμο":"Ανεξόφλητο"),fdate(e.paidDate),e.rf,e.afm,e.notes].map(q).join(";"));
+download("logariasmoi_"+today()+".csv","\uFEFF"+[H.map(q).join(";")].concat(rows).join("\r\n"),"text/csv;charset=utf-8")}
 function billsFiltered(){const pr=$("xfpr").value,c=$("xfc").value,o=$("xfo").value,st=$("xfs").value,d1=$("xd1").value,d2=$("xd2").value;
 return (db.generalExpenses||[]).map(gxNorm).filter(e=>(!pr||gxPv(e.provider)==gxPv(pr))&&(!c||e.category==c)&&(!o||e.owner==o)&&(!st||(st=="paid"?e.paid:st=="unpaid"?!e.paid:(!e.paid&&e.dueDate&&e.dueDate<today())))&&(!d1||(e.date||"")>=d1)&&(!d2||(e.date||"")<=d2))
 .sort((a,b)=>(b.dueDate||b.date||"").localeCompare(a.dueDate||a.date||""))}
