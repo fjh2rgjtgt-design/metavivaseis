@@ -16,6 +16,7 @@ th{background:#e6edf5}tr:hover{background:#f6f9fc}
 .st{padding:3px 8px;border-radius:12px;font-size:15px;white-space:nowrap}
 .s0{background:#ff9800;color:#fff;font-weight:600}.s1{background:#2e7d32;color:#fff;font-weight:600}
 .tot{font-size:20px;font-weight:700}
+.print-title{display:none}
 .modal{position:fixed;top:0;left:0;right:0;bottom:0;background:#0007;display:none;align-items:flex-start;justify-content:center;overflow:auto;z-index:9}
 .modal .card{max-width:800px;width:95%;margin:20px auto}
 .modal{overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;height:100vh;height:100dvh;max-height:100dvh}
@@ -38,7 +39,8 @@ header h1{font-size:19px;flex:1 1 auto;margin:0}
 header .hx{display:none}
 header.open .hx{display:block;width:100%}
 #store{order:3}
-#mbar{display:flex;gap:6px;width:100%;order:2}
+#mbar{display:flex;flex-wrap:wrap;gap:6px;width:100%;order:2}
+#mbar input{flex:1 1 100%}
 #mbar input{flex:1}
 #mbar button{white-space:nowrap}
 main{padding:8px}
@@ -66,10 +68,31 @@ main table,#rm table{display:block}main tbody,#rm tbody{display:block}
 #xm code{word-break:break-all}
 .tot{font-size:18px}
 }
+
+@media print{
+html,body{background:#fff!important;color:#000!important;font-size:11pt;margin:0;padding:0}
+header,#mbar,#menuBtn,.filt,button,.act,.modal,#store,#fstat,#mq,.noprint{display:none!important}
+main{padding:0;max-width:none;margin:0}
+.card{box-shadow:none;border:0;padding:4px 0;margin:0 0 8px;border-radius:0}
+main table thead{display:table-header-group!important}
+main table{display:table!important;width:100%;table-layout:auto}main tbody{display:table-row-group!important}main thead tr{display:table-row!important}main th{display:table-cell!important}main th:last-child{display:none!important}
+#list tr{display:table-row!important;background:none!important;border:0!important;box-shadow:none!important;margin:0!important;padding:0!important;page-break-inside:avoid}
+#list td{display:table-cell!important;border-bottom:1px solid #ccc;padding:4px 6px;font-size:10pt;color:#000}
+#list td[data-label]:before{content:none!important}
+#list td.act,#list td:last-child{display:none!important}
+th{background:#eee!important;color:#000;border-bottom:1px solid #999;padding:4px 6px;font-size:10pt}
+.tot{font-size:12pt;color:#000!important}
+.tot span{color:#000!important}
+.st{border:1px solid #333;color:#000!important;background:#fff!important;font-weight:600}
+.bon{color:#000!important;font-weight:700}
+a{color:#000!important;text-decoration:none}
+h1.print-title{display:block!important;font-size:16pt;margin:0 0 8px;color:#000}
+@page{size:A4 portrait;margin:12mm}
+}
 </style></head><body>
-<header><h1>🚗 Μεταβιβάσεις Οχημάτων <small id="appVer" style="font-size:11px;font-weight:400;opacity:.6">v23</small></h1>
+<header><h1>🚗 Μεταβιβάσεις Οχημάτων <small id="appVer" style="font-size:11px;font-weight:400;opacity:.6">v24</small></h1>
 <button type="button" class="sec" id="menuBtn" onclick="this.parentNode.classList.toggle('open')">☰ Μενού</button>
-<div id="mbar"><input id="mq" type="search" placeholder="Αναζήτηση..." oninput="$('q').value=this.value;render()"><button type="button" class="sec" onclick="document.body.classList.toggle('showf')">Φίλτρα</button><button type="button" class="ok" onclick="openForm()">+ Νέα</button></div>
+<div id="mbar"><input id="mq" type="search" placeholder="Αναζήτηση..." oninput="$('q').value=this.value;render()"><button type="button" class="sec" id="progBtnM" onclick="toggleInProgress()">Μόνο σε εξέλιξη</button><button type="button" class="sec" onclick="printList()">Εκτύπωση</button><button type="button" class="sec" onclick="document.body.classList.toggle('showf')">Φίλτρα</button><button type="button" class="ok" onclick="openForm()">+ Νέα</button></div>
 <button type="button" class="hx ok" onclick="openForm()">+ Νέα καταχώρηση</button>
 <button type="button" class="hx sec" onclick="saveFile()">Αποθήκευση σε αρχείο</button>
 <button type="button" class="hx sec" onclick="document.getElementById('imp').click()">Άνοιγμα αρχείου</button>
@@ -80,6 +103,8 @@ main table,#rm table{display:block}main tbody,#rm tbody{display:block}
 <button type="button" class="hx sec" id="bkSync" onclick="bkSync()">Συγχρονισμός</button>
 <button type="button" class="hx sec" id="bkDl" onclick="bkSaveDl()">Λήψη αρχείου</button>
 <input type="file" id="bkFile" accept=".json,application/json,text/plain,*/*" style="display:none" onchange="var inp=this,f=inp.files&&inp.files[0],done=function(){setTimeout(function(){inp.value=''},0)};if(bkSyncMode){bkSyncMode=false;bkReadFile(f,function(p){done();bkSyncAfter(p)})}else bkReadFile(f,done)">
+<button type="button" class="hx sec" id="progBtn" onclick="toggleInProgress()">Μόνο σε εξέλιξη</button>
+<button type="button" class="hx sec" onclick="printList()">Εκτύπωση</button>
 <button type="button" class="hx" onclick="openReport()">Ανά συνεργάτη</button>
 <button type="button" class="hx sec" id="billsBtn" onclick="openBills()">Έξοδα &amp; Λογαριασμοί</button>
 <button type="button" class="hx sec" onclick="openSettings()">Ρυθμίσεις</button>
@@ -93,7 +118,8 @@ main table,#rm table{display:block}main tbody,#rm tbody{display:block}
 <div><label>Από ημερομηνία</label><input type="date" id="df" onchange="render()"></div>
 <div><label>Έως ημερομηνία</label><input type="date" id="dt" onchange="render()"></div>
 <div><label>Συνεργάτης</label><select id="fp" onchange="render()"></select></div>
-<div><label>Κατάσταση</label><select id="fs" onchange="render()"></select></div>
+<div><label>Κατάσταση</label><select id="fs" onchange="syncProgBtn();render()"></select></div>
+<div class="noprint" style="display:flex;align-items:flex-end"><button type="button" class="sec" id="progBtnF" onclick="toggleInProgress()" style="width:100%">Μόνο σε εξέλιξη</button></div>
 <div><label>Τύπος οχήματος</label><select id="ft" onchange="render()"></select></div>
 <div><label>Τύπος εργασίας</label><select id="fj" onchange="render()"></select></div>
 </div>
@@ -261,13 +287,16 @@ const now=()=>new Date().toLocaleString("el-GR").replace(/[\u200e\u200f]/g,"");
 const eur=n=>(+n||0).toLocaleString("el-GR",{style:"currency",currency:"EUR"});
 const fdate=d=>d?d.split("-").reverse().join("/"):"";
 function opts(el,arr,all){const keep=el.value;while(el.options.length)el.remove(0);if(all)el.add(new Option(all,""));arr.forEach(x=>el.add(new Option(x,x)));if(keep!=null)el.value=keep}
-function fillSelects(){opts($("fp"),db.partners,"Όλοι");opts($("fs"),STATUS,"Όλες");opts($("ft"),TYPES,"Όλοι");opts($("fj"),JOBS,"Όλες");opts($("f_job"),JOBS);opts($("f_type"),TYPES);opts($("f_partner"),db.partners);opts($("f_status"),STATUS)}
+function fillSelects(){opts($("fp"),db.partners,"Όλοι");opts($("fs"),STATUS,"Όλες");opts($("ft"),TYPES,"Όλοι");opts($("fj"),JOBS,"Όλες");opts($("f_job"),JOBS);opts($("f_type"),TYPES);opts($("f_partner"),db.partners);opts($("f_status"),STATUS);syncProgBtn()}
+function syncProgBtn(){const on=$("fs")&&$("fs").value===STATUS[0];["progBtn","progBtnM","progBtnF"].forEach(id=>{const b=$(id);if(!b)return;b.classList.toggle("ok",on);b.classList.toggle("sec",!on);b.setAttribute("aria-pressed",on?"true":"false")})}
+function toggleInProgress(){const s=$("fs");if(!s)return;s.value=s.value===STATUS[0]?"":STATUS[0];syncProgBtn();render()}
+function printList(){syncProgBtn();render();const t=document.getElementById("printTitle");if(t)t.remove();const h=document.createElement("h1");h.id="printTitle";h.className="print-title";h.style.display="none";const d=new Date();const ds=d.toLocaleDateString("el-GR");const filt=$("fs")&&$("fs").value?(" — "+$("fs").value):"";h.textContent="Μεταβιβάσεις Οχημάτων — "+ds+filt;const main=document.querySelector("main");if(main)main.insertBefore(h,main.firstChild);setTimeout(function(){window.print()},50)}
 function filtered(noPartner){const D1=$("df").value,D2=$("dt").value;const q=$("q").value.trim().toLowerCase(),p=$("fp").value,s=$("fs").value,t=$("ft").value,j=$("fj").value;
 return db.records.filter(r=>(noPartner||!p||r.partner==p)&&(!D1||(r.date||"")>=D1)&&(!D2||(r.date||"")<=D2)&&(!s||r.status==s)&&(!t||r.type==t)&&(!j||r.job==j)&&(!q||[r.plate,r.job,r.name,r.phone,r.partner,r.notes,r.afm].join(" ").toLowerCase().includes(q)))
 .sort((a,b)=>(b.date||"").localeCompare(a.date||"")||b.created-a.created)}
 function render(){const L=filtered();
 $("list").innerHTML=L.map(r=>`<tr onclick="openForm('${r.id}')" style="cursor:pointer"><td data-label="Ημ/νία">${fdate(r.date)}</td><td class="pl"><b>${esc(r.plate)}</b></td><td data-label="Τύπος">${esc(r.type)}</td><td>${r.job?`<span class="st" style="background:#eee">${esc(r.job)}</span>`:""}</td><td data-label="Συνεργάτης">${esc(r.partner)}</td><td data-label="Αγοραστής">${esc(r.name)}</td><td data-label="Τηλ.">${r.phone?`<a href="tel:${esc(r.phone)}" onclick="event.cancelBubble=true;if(event.stopPropagation)event.stopPropagation()">${esc(r.phone)}</a>`:""}</td><td class="bon" data-label="Bonus">${r.bonus!==""&&r.bonus!=null?eur(r.bonus):""}</td><td style="color:#777;font-size:15px" data-label="Παράβολα">${r.amount!==""&&r.amount!=null?eur(r.amount):""}</td><td><span class="st s${STATUS.indexOf(r.status)}">${esc(r.status)}</span></td><td data-label="Σημ.">${esc(r.notes)}</td><td class="act"><button type="button" class="sec" onclick="event.cancelBubble=true;if(event.stopPropagation)event.stopPropagation();openForm('${r.id}');return false">Επεξεργασία</button><button type="button" class="del" onclick="event.cancelBubble=true;if(event.stopPropagation)event.stopPropagation();delRow('${r.id}');return false">Διαγραφή</button></td></tr>`).join("")||`<tr><td colspan="12">Δεν υπάρχουν καταχωρήσεις.</td></tr>`;
-$("tot").innerHTML=`<span style="color:#2e7d32">Σύνολο Bonus: ${eur(L.reduce((a,r)=>a+(+r.bonus||0),0))}</span> <span style="font-weight:400;font-size:16px;color:#555">— Καταχωρήσεις: ${L.length} — Ποσά για παράβολα: ${eur(L.reduce((a,r)=>a+(+r.amount||0),0))}</span>${gxTotHtml(L)}`}
+$("tot").innerHTML=`<span style="color:#2e7d32">Σύνολο Bonus: ${eur(L.reduce((a,r)=>a+(+r.bonus||0),0))}</span> <span style="font-weight:400;font-size:16px;color:#555">— Καταχωρήσεις: ${L.length} — Ποσά για παράβολα: ${eur(L.reduce((a,r)=>a+(+r.amount||0),0))}</span>${gxTotHtml(L)}`;syncProgBtn()}
 const F=["date","plate","type","job","partner","name","afm","addr","phone","amount","bonus","expenses","expensesNote","status","notes"];
 function openForm(id){cur=id?db.records.find(r=>r.id==id):null;fillSelects();
 F.forEach(k=>$("f_"+k).value=cur?(cur[k]??""):"");if(!cur){$("f_date").value=today();$("f_status").value=STATUS[0];$("f_type").value=TYPES[0];$("f_job").value=JOBS[0]}
