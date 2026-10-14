@@ -67,13 +67,14 @@ main table,#rm table{display:block}main tbody,#rm tbody{display:block}
 .tot{font-size:18px}
 }
 </style></head><body>
-<header><h1>🚗 Μεταβιβάσεις Οχημάτων <small id="appVer" style="font-size:11px;font-weight:400;opacity:.6">v19</small></h1>
+<header><h1>🚗 Μεταβιβάσεις Οχημάτων <small id="appVer" style="font-size:11px;font-weight:400;opacity:.6">v20</small></h1>
 <button type="button" class="sec" id="menuBtn" onclick="this.parentNode.classList.toggle('open')">☰ Μενού</button>
 <div id="mbar"><input id="mq" type="search" placeholder="Αναζήτηση..." oninput="$('q').value=this.value;render()"><button type="button" class="sec" onclick="document.body.classList.toggle('showf')">Φίλτρα</button><button type="button" class="ok" onclick="openForm()">+ Νέα</button></div>
 <button type="button" class="hx ok" onclick="openForm()">+ Νέα καταχώρηση</button>
 <button type="button" class="hx sec" onclick="saveFile()">Αποθήκευση σε αρχείο</button>
 <button type="button" class="hx sec" onclick="document.getElementById('imp').click()">Άνοιγμα αρχείου</button>
 <button type="button" class="hx sec" onclick="exportCSV()">Εξαγωγή Excel (CSV)</button>
+<button type="button" class="hx sec" id="oldDelBtn" onclick="oldDelOpen()">Διαγραφή παλιών</button>
 <button type="button" class="hx sec" id="bkExp" onclick="bkExport()">Εξαγωγή</button>
 <button type="button" class="hx sec" id="bkImp" onclick="bkImport()">Εισαγωγή</button>
 <button type="button" class="hx sec" id="bkSync" onclick="bkSync()">Συγχρονισμός</button>
@@ -144,6 +145,8 @@ main table,#rm table{display:block}main tbody,#rm tbody{display:block}
 <p><button type="button" class="ok" onclick="gxSaveForm()">Αποθήκευση</button> <button type="button" class="sec" onclick="$('xform').style.display='none'">Ακύρωση</button></p></div>
 <div style="overflow:auto"><table><thead><tr><th>Ημ/νία</th><th>Περιγραφή</th><th>Ιδιοκτήτης</th><th>Κατηγορία</th><th>Ποσό</th><th>Έκδοση</th><th>Λήξη</th><th>RF</th><th>Κατάσταση</th><th></th></tr></thead><tbody id="xlist"></tbody></table></div>
 <p><button type="button" class="sec" onclick="closeM('xm')">Κλείσιμο</button></p></div></div>
+<div class="modal" id="oldm" style="z-index:12"><div class="card" style="max-width:560px"><h2>Διαγραφή παλιών</h2><p id="old_info"></p><div id="old_list" style="max-height:50vh;overflow:auto;font-size:14px;line-height:1.6"></div>
+<p><button type="button" class="ok" id="old_ok" style="background:#c62828" onclick="oldDelDo()">Διαγραφή</button> <button type="button" class="sec" onclick="closeM('oldm')">Άκυρο</button></p></div></div>
 <div class="modal" id="rentm" style="z-index:11"><div class="card" style="max-width:480px"><h2>Ενοίκιο – κανόνας</h2>
 <div class="grid"><div><label>Περιγραφή</label><input id="r_label" autocomplete="off"></div><div><label>Ποσό (€)</label><input id="r_amount" type="number" step="0.01"></div>
 <div><label>Ημέρα του μήνα</label><input id="r_day" type="number" min="1" max="31"></div><div><label>Από μήνα</label><input id="r_start" type="month"></div>
@@ -247,6 +250,9 @@ if(/(^|\| )IN: ναι( \||$)/.test(r.notes||"")){const nn=r.notes.split(" | ").f
 if(r.job=="Άλλο"&&r.type=="Φορτηγό"&&String(r.id).startsWith("acc")){c.push({f:"job",from:"Άλλο",to:"Φορτηγό"});r.job="Φορτηγό"}
 if(c.length){ch=true;(r.history=r.history||[]).push({at:now(),action:"Αυτόματη ενημέρωση",changes:c})}});
 if(ch)localStorage.setItem(KEY,JSON.stringify(db))}
+const OLD_CUT="2026-10-13";function oldDelList(){return db.records.filter(r=>r&&/^\d{4}-\d{2}-\d{2}$/.test(r.date||"")&&r.date<=OLD_CUT)}
+function oldDelOpen(){const L=oldDelList().slice().sort((a,b)=>a.date<b.date?-1:1);const fd=d=>d.split("-").reverse().join("/");$("old_info").textContent="Εγγραφές με ημερομηνία έως και "+fd(OLD_CUT)+": "+L.length+(L.length?" — θα διαγραφούν οι παρακάτω:":" — δεν υπάρχει τίποτα για διαγραφή.");$("old_list").innerHTML=L.map(r=>"<div><b>"+esc(r.plate||"(χωρίς πινακίδα)")+"</b> – "+fd(r.date)+" – "+esc(r.name||"")+"</div>").join("");$("old_ok").style.display=L.length?"":"none";$("oldm").style.display="flex"}
+function oldDelDo(){const L=oldDelList();if(!L.length){closeM("oldm");return}if(!confirm("Οριστική διαγραφή "+L.length+" εγγραφών με ημερομηνία έως "+OLD_CUT.split("-").reverse().join("/")+";"))return;const ids=new Set(L.map(r=>r.id));const t=Date.now();db.deleted=db.deleted||{};L.forEach(r=>{if(r.id!=null)db.deleted[r.id]=t});db.records=db.records.filter(r=>!L.includes(r));persist();closeM("oldm");render()}
 function persist(){db.savedAt=Date.now();localStorage.setItem(KEY,JSON.stringify(db));if(fh)writeLinked();usbSave();if(window.odSave)window.odSave()}
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
