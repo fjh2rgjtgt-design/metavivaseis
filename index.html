@@ -106,7 +106,7 @@ main table th:nth-child(8),main table th:nth-child(9),#list td:nth-child(8),#lis
 <button type="button" class="hx" onclick="openReport()">Ανά συνεργάτη</button>
 <button type="button" class="hx sec" id="billsBtn" onclick="openBills()">Έξοδα &amp; Λογαριασμοί</button>
 <button type="button" class="hx sec" onclick="openSettings()">Ρυθμίσεις</button>
-<span id="store" style="background:#fff;color:#1f4e79;padding:6px 12px;border-radius:16px;font-weight:700;font-size:15px">Αποθήκευση: Browser</span>
+
 <span id="fstat"></span>
 <input type="file" id="imp" accept=".json,application/json,text/plain,*/*" style="display:none" onchange="var inp=this;bkReadFile(inp.files&&inp.files[0],function(){setTimeout(function(){inp.value=''},0)})">
 </header>
@@ -460,7 +460,7 @@ const DATAF="metavivaseis_data.json",BAKF="metavivaseis_data.backup.json",JSF="m
 function idb(){return new Promise((ok,no)=>{const q=indexedDB.open("metavivaseis_fs",1);q.onupgradeneeded=()=>q.result.createObjectStore("h");q.onsuccess=()=>ok(q.result);q.onerror=()=>no(q.error)})}
 async function idbGet(k){const d=await idb();return new Promise(ok=>{const q=d.transaction("h").objectStore("h").get(k);q.onsuccess=()=>ok(q.result);q.onerror=()=>ok(null)})}
 async function idbSet(k,v){try{const d=await idb();await new Promise(ok=>{const t=d.transaction("h","readwrite");t.objectStore("h").put(v,k);t.oncomplete=ok;t.onerror=ok})}catch(e){}}
-function setStore(){const c=$("store");c.textContent=dirH?"Αποθήκευση: "+(DRIVE?"USB ("+DRIVE+":)":"Φάκελος ("+dirH.name+")"):"Αποθήκευση: Browser";c.style.background=dirH?"#c8e6c9":"#fff"}
+function setStore(){const c=$("store");if(!c)return;c.textContent=dirH?"Αποθήκευση: "+(DRIVE?"USB ("+DRIVE+":)":"Φάκελος ("+dirH.name+")"):"Αποθήκευση: Browser";c.style.background=dirH?"#c8e6c9":"#fff"}
 async function wfile(h,n,t){const w=await(await h.getFileHandle(n,{create:true})).createWritable();await w.write(t);await w.close()}
 function writeUSB(){return;const h=dirH;if(!h)return;const data=JSON.stringify(db,null,1);
 usbQ=usbQ.then(async()=>{try{
@@ -487,7 +487,7 @@ const OD_ON=/^[0-9a-f-]{36}$/i.test(CLIENT_ID)&&typeof msal!="undefined"&&locati
 const OD_SCOPES=["Files.ReadWrite.AppFolder"];
 const OD_URL="https://graph.microsoft.com/v1.0/me/drive/special/approot:/metavivaseis_data.json";
 let odApp=null,odAcc=null,odETag=localStorage.getItem("od_etag"),odState="",odTimer=null,odBusy=false,odAgain=false;
-function odChip(s,t){odState=s;const c=$("store");c.textContent="Αποθήκευση: OneDrive "+({ok:"✔",sync:"⏳",off:"(εκτός σύνδεσης – θα συγχρονιστεί)",err:"⚠"}[s]||"");c.title=t||"";c.style.background=s=="ok"?"#c8e6c9":s=="err"?"#ffcdd2":"#fff3cd"}
+function odChip(s,t){odState=s;const c=$("store");if(!c)return;c.textContent="Αποθήκευση: OneDrive "+({ok:"✔",sync:"⏳",off:"(εκτός σύνδεσης – θα συγχρονιστεί)",err:"⚠"}[s]||"");c.title=t||"";c.style.background=s=="ok"?"#c8e6c9":s=="err"?"#ffcdd2":"#fff3cd"}
 async function odToken(){try{return(await odApp.acquireTokenSilent({scopes:OD_SCOPES,account:odAcc})).accessToken}catch(e){await odApp.acquireTokenRedirect({scopes:OD_SCOPES,account:odAcc});throw e}}
 async function odFetch(url,opt){opt=opt||{};opt.headers=Object.assign({Authorization:"Bearer "+await odToken()},opt.headers||{});return fetch(url,opt)}
 function odMerge(local,remote){const del=Object.assign({},remote.deleted||{},local.deleted||{});const m={};
