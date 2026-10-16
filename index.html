@@ -96,14 +96,10 @@ main table th:nth-child(8),main table th:nth-child(9),#list td:nth-child(8),#lis
 <button type="button" class="sec" id="menuBtn" onclick="this.parentNode.classList.toggle('open')">☰ Μενού</button>
 <div id="mbar"><input id="mq" type="search" placeholder="Αναζήτηση..." oninput="$('q').value=this.value;render()"><button type="button" class="sec" id="progBtnM" onclick="toggleInProgress()">Μόνο σε εξέλιξη</button><button type="button" class="sec" onclick="printList()">Εκτύπωση</button><button type="button" class="sec" onclick="document.body.classList.toggle('showf')">Φίλτρα</button><button type="button" class="ok" onclick="openForm()">+ Νέα</button></div>
 <button type="button" class="hx ok" onclick="openForm()">+ Νέα καταχώρηση</button>
-<button type="button" class="hx sec" onclick="saveFile()">Αποθήκευση σε αρχείο</button>
-<button type="button" class="hx sec" onclick="document.getElementById('imp').click()">Άνοιγμα αρχείου</button>
 <button type="button" class="hx sec" onclick="exportCSV()">Εξαγωγή Excel (CSV)</button>
 <button type="button" class="hx sec" id="oldDelBtn" onclick="oldDelOpen()">Διαγραφή παλιών</button>
 <button type="button" class="hx sec" id="bkExp" onclick="bkExport()">Εξαγωγή</button>
 <button type="button" class="hx sec" id="bkImp" onclick="bkImport()">Εισαγωγή</button>
-<button type="button" class="hx sec" id="bkSync" onclick="bkSync()">Συγχρονισμός</button>
-<button type="button" class="hx sec" id="bkDl" onclick="bkSaveDl()">Λήψη αρχείου</button>
 <input type="file" id="bkFile" accept=".json,application/json,text/plain,*/*" style="display:none" onchange="var inp=this,f=inp.files&&inp.files[0],done=function(){setTimeout(function(){inp.value=''},0)};if(bkSyncMode){bkSyncMode=false;bkReadFile(f,function(p){done();bkSyncAfter(p)})}else bkReadFile(f,done)">
 <button type="button" class="hx sec" id="progBtn" onclick="toggleInProgress()">Μόνο σε εξέλιξη</button>
 <button type="button" class="hx sec" onclick="printList()">Εκτύπωση</button>
