@@ -94,14 +94,14 @@ main table th:nth-child(8),main table th:nth-child(9),#list td:nth-child(8),#lis
 </style></head><body>
 <header><h1>🚗 Μεταβιβάσεις Οχημάτων <small id="appVer" style="font-size:11px;font-weight:400;opacity:.6">v26</small></h1>
 <button type="button" class="sec" id="menuBtn" onclick="this.parentNode.classList.toggle('open')">☰ Μενού</button>
-<div id="mbar"><input id="mq" type="search" placeholder="Αναζήτηση..." oninput="$('q').value=this.value;render()"><button type="button" class="sec" id="progBtnM" onclick="toggleInProgress()">Μόνο σε εξέλιξη</button><button type="button" class="sec" onclick="printList()">Εκτύπωση</button><button type="button" class="sec" onclick="document.body.classList.toggle('showf')">Φίλτρα</button><button type="button" class="ok" onclick="openForm()">+ Νέα</button></div>
+<div id="mbar"><input id="mq" type="search" placeholder="Αναζήτηση..." oninput="$('q').value=this.value;render()"><button type="button" class="sec" id="progBtnM" onclick="toggleInProgress()">Σε εξέλιξη</button><button type="button" class="sec" onclick="printList()">Εκτύπωση</button><button type="button" class="sec" onclick="document.body.classList.toggle('showf')">Φίλτρα</button><button type="button" class="ok" onclick="openForm()">+ Νέα</button></div>
 <button type="button" class="hx ok" onclick="openForm()">+ Νέα καταχώρηση</button>
-<button type="button" class="hx sec" onclick="exportCSV()">Εξαγωγή Excel (CSV)</button>
+<button type="button" class="hx sec" onclick="exportCSV()">Εξαγωγή Excel</button>
 <button type="button" class="hx sec" id="oldDelBtn" onclick="oldDelOpen()">Διαγραφή παλιών</button>
 <button type="button" class="hx sec" id="bkExp" onclick="bkExport()">Εξαγωγή</button>
 <button type="button" class="hx sec" id="bkImp" onclick="bkImport()">Εισαγωγή</button>
 <input type="file" id="bkFile" accept=".json,application/json,text/plain,*/*" style="display:none" onchange="var inp=this,f=inp.files&&inp.files[0],done=function(){setTimeout(function(){inp.value=''},0)};if(bkSyncMode){bkSyncMode=false;bkReadFile(f,function(p){done();bkSyncAfter(p)})}else bkReadFile(f,done)">
-<button type="button" class="hx sec" id="progBtn" onclick="toggleInProgress()">Μόνο σε εξέλιξη</button>
+<button type="button" class="hx sec" id="progBtn" onclick="toggleInProgress()">Σε εξέλιξη</button>
 <button type="button" class="hx sec" onclick="printList()">Εκτύπωση</button>
 <button type="button" class="hx" onclick="openReport()">Ανά συνεργάτη</button>
 <button type="button" class="hx sec" id="billsBtn" onclick="openBills()">Έξοδα &amp; Λογαριασμοί</button>
@@ -117,7 +117,7 @@ main table th:nth-child(8),main table th:nth-child(9),#list td:nth-child(8),#lis
 <div><label>Έως ημερομηνία</label><input type="date" id="dt" onchange="render()"></div>
 <div><label>Συνεργάτης</label><select id="fp" onchange="render()"></select></div>
 <div><label>Κατάσταση</label><select id="fs" onchange="syncProgBtn();render()"></select></div>
-<div class="noprint" style="display:flex;align-items:flex-end"><button type="button" class="sec" id="progBtnF" onclick="toggleInProgress()" style="width:100%">Μόνο σε εξέλιξη</button></div>
+<div class="noprint" style="display:flex;align-items:flex-end"><button type="button" class="sec" id="progBtnF" onclick="toggleInProgress()" style="width:100%">Σε εξέλιξη</button></div>
 <div><label>Τύπος οχήματος</label><select id="ft" onchange="render()"></select></div>
 <div><label>Τύπος εργασίας</label><select id="fj" onchange="render()"></select></div>
 </div>
