@@ -746,4 +746,44 @@ var sm=el("sm"),card=sm&&sm.querySelector(".card");if(card){var d=document.creat
 kv("get","dir").then(function(h){if(h){awH=h;awOn=true;ui();return Promise.resolve(h.queryPermission({mode:"readwrite"})).then(function(p){if(p!="granted")needPerm()})}ui()}).catch(function(){ui()});
 })();
 </script>
+<script>
+/* ===== Αυτόματη εισαγωγή eisagogi_*.json από φάκελο (File System Access) ===== */
+(function(){
+var aiH=null,busy=false,LS="mv_autoimport_done",RE=/^eisagogi_.*\.json$/i;
+function el(id){return document.getElementById(id)}
+function idb(){return new Promise(function(res,rej){var r=indexedDB.open("mv_autosave",1);r.onupgradeneeded=function(){r.result.createObjectStore("kv")};r.onsuccess=function(){res(r.result)};r.onerror=function(){rej(r.error)}})}
+function kv(op,k,v){return idb().then(function(d){return new Promise(function(res,rej){var t=d.transaction("kv",op=="get"?"readonly":"readwrite"),s=t.objectStore("kv"),q=op=="get"?s.get(k):op=="del"?s.delete(k):s.put(v,k);q.onsuccess=function(){res(q.result)};q.onerror=function(){rej(q.error)}})})}
+function done(){try{return JSON.parse(localStorage.getItem(LS)||"{}")||{}}catch(e){return {}}}
+function ui(){var n=el("aiName");if(n)n.textContent=aiH?("Φάκελος: "+aiH.name):"Δεν έχει συνδεθεί φάκελος";var o=el("aiOff");if(o)o.style.display=aiH?"":"none"}
+function banner(show){var b=el("aiBan");if(!show){if(b)b.remove();return}if(b)return;b=document.createElement("button");b.type="button";b.id="aiBan";b.className="ok";b.textContent="Ενεργοποίηση αυτόματης εισαγωγής";
+ b.style.cssText="position:fixed;left:10px;bottom:10px;z-index:9998;font-size:13px;padding:6px 12px;border-radius:14px;box-shadow:0 1px 4px rgba(0,0,0,.2)";
+ b.onclick=function(){var p;try{p=aiH.requestPermission({mode:"read"})}catch(e){return}Promise.resolve(p).then(function(s){if(s=="granted"){banner(false);scan()}},function(){})};document.body.appendChild(b)}
+function applyOne(d){var g0=(db.generalExpenses||[]).length,a0=(db.appointments||[]).length,r0=db.records.length;
+ var p=mvPlan(db,d);mvSafety();mvApply(d,p);migrate();persist();
+ return {gx:(db.generalExpenses||[]).length-g0,ap:(db.appointments||[]).length-a0,rec:db.records.length-r0}}
+function scan(){if(!aiH||busy||typeof db=="undefined"||!db)return Promise.resolve();busy=true;
+ return Promise.resolve(aiH.queryPermission?aiH.queryPermission({mode:"read"}):"granted").then(function(p){if(p!="granted"){banner(true);return}banner(false);
+  var L=[],it=aiH.values();
+  function nx(){return it.next().then(function(r){if(r.done)return;var h=r.value;if(h.kind=="file"&&RE.test(h.name)&&!/^metavivaseis_data\.js(on)?$/i.test(h.name))L.push(h);return nx()})}
+  return nx().then(function(){L.sort(function(a,b){return a.name<b.name?-1:1});var D=done(),msgs=[],ch=false;
+   return L.reduce(function(pr,h){return pr.then(function(){return h.getFile().then(function(f){var sig=f.lastModified+":"+f.size;if(D[f.name]===sig)return;
+     return bkTextOf(f).then(function(t){if(!t||!t.replace(/[\s\u0000\uFEFF]/g,""))return;var d=bkParse(t);if(!mvValid(d))return;
+      var r=applyOne(d);ch=true;D[f.name]=sig;var parts=[];if(r.gx>0)parts.push(r.gx+(r.gx==1?" λογαριασμός":" λογαριασμοί"));if(r.ap>0)parts.push(r.ap+" ραντεβού");if(r.rec>0)parts.push(r.rec+" εγγραφές");
+      if(parts.length)msgs.push("Εισήχθησαν "+parts.join(", ")+" από "+f.name)})}).catch(function(e){console.warn("autoimport",h.name,e)})})},Promise.resolve()).then(function(){
+     if(ch){try{localStorage.setItem(LS,JSON.stringify(D))}catch(e){}try{fillSelects()}catch(e){}try{render()}catch(e){}try{window.awWrite&&window.awWrite()}catch(e){}}
+     if(msgs.length)bkMsg(msgs.join(" · "),1)})})
+ }).catch(function(e){console.warn("autoimport scan",e)}).then(function(){busy=false})}
+window.aiPick=function(){var p;try{p=showDirectoryPicker({id:"metavivaseis-import",mode:"read"})}catch(e){return}
+ Promise.resolve(p).then(function(h){aiH=h;ui();kv("put","aiDir",h).catch(function(){});return scan()}).catch(function(e){if(e&&e.name==="AbortError")return;bkMsg("Σφάλμα επιλογής φακέλου: "+((e&&e.message)||e),0)})};
+window.aiDisable=function(){aiH=null;kv("del","aiDir").catch(function(){});banner(false);ui()};
+window.aiScan=scan;
+if(!window.showDirectoryPicker||!window.indexedDB)return;
+var sm=el("sm"),card=sm&&sm.querySelector(".card");if(card){var d=document.createElement("div");d.id="aiBox";d.style.cssText="border-top:2px solid #ccd;margin-top:16px;padding-top:8px";
+ d.innerHTML='<h2>Αυτόματη εισαγωγή (laptop)</h2><p style="font-size:14px;color:#555">Διάλεξε μία φορά τον φάκελο OneDrive\\Metavivaseis. Η εφαρμογή διαβάζει μόνη της τα αρχεία eisagogi_*.json (λογαριασμοί, ραντεβού) χωρίς διπλοεγγραφές. Τα αρχεία δεν αλλάζουν.</p><p id="aiName" style="font-size:14px"></p><p><button type="button" class="ok" onclick="aiPick()">Αυτόματη εισαγωγή: σύνδεση φακέλου</button> <button type="button" class="del" id="aiOff" onclick="aiDisable()">Απενεργοποίηση</button></p>';
+ card.appendChild(d)}
+kv("get","aiDir").then(function(h){if(h){aiH=h;ui();scan()}else ui()}).catch(function(){ui()});
+setInterval(function(){scan()},5*60*1000);
+window.addEventListener("focus",function(){scan()});
+})();
+</script>
 </body></html>
