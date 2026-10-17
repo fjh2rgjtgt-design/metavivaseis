@@ -518,7 +518,12 @@ function odMerge(local,remote){const del=Object.assign({},remote.deleted||{},loc
  const parts=[...new Set([...(remote.partners||[]),...(local.partners||[])])];
  const am={};[remote,local].forEach(d=>(Array.isArray(d.appointments)?d.appointments:[]).forEach(a=>{if(!a||a.id==null)return;const o=am[a.id],t=a.updated||a.created||0;if(!o||t>=(o.updated||o.created||0))am[a.id]=Object.assign({},a,{notified:Object.assign({},o&&o.notified,a.notified)});else o.notified=Object.assign({},a.notified,o.notified)}));
  const aps=Object.values(am).filter(a=>!(del[a.id]&&del[a.id]>=(a.updated||a.created||0)));
- return{records:recs,partners:parts,deleted:del,appointments:aps,savedAt:Date.now()}}
+ const ts=x=>x&&(x.updated||x.modified||x.created||0);
+ const byId=(k)=>{const mm={},ord=[];[remote,local].forEach((d,li)=>(Array.isArray(d[k])?d[k]:[]).forEach(x=>{if(!x||typeof x!="object")return;const id=x.id!=null?String(x.id):JSON.stringify(x);if(!(id in mm)){mm[id]=x;ord.push(id);return}const o=mm[id],to=ts(o),tn=ts(x);if(to||tn){if(tn>=to)mm[id]=x}else if(li==1)mm[id]=x}));return ord.map(i=>mm[i]).filter(x=>!(x.id!=null&&del[x.id]&&del[x.id]>=(ts(x)||0)))};
+ const gx=byId("generalExpenses"),rc=byId("recurring");
+ const pvk=p=>p&&(p.id!=null?"i:"+p.id:"n:"+String(p.name||"").trim().toLowerCase());const pm={},po=[];
+ [remote,local].forEach(d=>(Array.isArray(d.providers)?d.providers:[]).forEach(p=>{if(!p||typeof p!="object")return;const k=pvk(p);if(!(k in pm))po.push(k);pm[k]=p}));
+ return Object.assign({},remote,local,{records:recs,partners:parts,deleted:del,appointments:aps,generalExpenses:gx,recurring:rc,providers:po.map(k=>pm[k]),savedAt:Date.now()})}
 async function odPull(){odChip("sync");const r=await odFetch(OD_URL);
  if(r.status==404){await odPush(true);return}
  if(!r.ok)throw new Error("Graph "+r.status);const meta=await r.json();
