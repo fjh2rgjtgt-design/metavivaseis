@@ -92,7 +92,7 @@ main table th:nth-child(8),main table th:nth-child(9),#list td:nth-child(8),#lis
 @page{size:A4 portrait;margin:12mm}
 }
 </style></head><body>
-<header><h1>🚗 Μεταβιβάσεις Οχημάτων <small id="appVer" style="font-size:11px;font-weight:400;opacity:.6">v26</small></h1>
+<header><h1>🚗 Μεταβιβάσεις Οχημάτων <small id="appVer" style="font-size:11px;font-weight:400;opacity:.6">v27</small></h1>
 <button type="button" class="sec" id="menuBtn" onclick="this.parentNode.classList.toggle('open')">☰ Μενού</button>
 <div id="mbar"><input id="mq" type="search" placeholder="Αναζήτηση..." oninput="$('q').value=this.value;render()"><button type="button" class="sec" id="progBtnM" onclick="toggleInProgress()">Σε εξέλιξη</button><button type="button" class="sec" onclick="printList()">Εκτύπωση</button><button type="button" class="sec" onclick="document.body.classList.toggle('showf')">Φίλτρα</button><button type="button" class="ok" onclick="openForm()">+ Νέα</button></div>
 <button type="button" class="hx ok" onclick="openForm()">+ Νέα καταχώρηση</button>
@@ -105,12 +105,14 @@ main table th:nth-child(8),main table th:nth-child(9),#list td:nth-child(8),#lis
 <button type="button" class="hx sec" onclick="printList()">Εκτύπωση</button>
 <button type="button" class="hx" onclick="openReport()">Ανά συνεργάτη</button>
 <button type="button" class="hx sec" id="billsBtn" onclick="openBills()">Έξοδα &amp; Λογαριασμοί</button>
+<button type="button" class="hx sec" id="apBtn" onclick="openAppointments()">Ραντεβού</button>
 <button type="button" class="hx sec" onclick="openSettings()">Ρυθμίσεις</button>
 
 <span id="fstat"></span>
 <input type="file" id="imp" accept=".json,application/json,text/plain,*/*" style="display:none" onchange="var inp=this;bkReadFile(inp.files&&inp.files[0],function(){setTimeout(function(){inp.value=''},0)})">
 </header>
 <main>
+<div class="card noprint" id="apBanner" style="display:none;cursor:pointer;border-left:5px solid #1f4e79;font-size:16px"></div>
 <div class="card grid filt">
 <div id="qbox"><label>Αναζήτηση</label><input id="q" placeholder="Πινακίδα, όνομα, τηλέφωνο, σημειώσεις..." oninput="render()"></div>
 <div><label>Από ημερομηνία</label><input type="date" id="df" onchange="render()"></div>
@@ -176,6 +178,26 @@ main table th:nth-child(8),main table th:nth-child(9),#list td:nth-child(8),#lis
 <div><label>Ημέρα του μήνα</label><input id="r_day" type="number" min="1" max="31"></div><div><label>Από μήνα</label><input id="r_start" type="month"></div>
 <div><label>Κατηγορία</label><select id="r_cat"><option>Επαγγελματικό</option><option>Προσωπικό</option></select></div><div><label><input type="checkbox" id="r_act" style="width:auto"> Ενεργό</label></div></div>
 <p><button type="button" class="ok" onclick="saveRent()">Αποθήκευση</button> <button type="button" class="sec" onclick="closeRent()">Κλείσιμο</button></p></div></div>
+<div class="modal" id="apm"><div class="card" style="max-width:900px"><h2>Ραντεβού</h2>
+<p><button type="button" class="ok" onclick="apEdit()">+ Νέο ραντεβού</button> <button type="button" class="sec" id="apNotifBtn" style="display:none" onclick="apAskNotif(true)">Ενεργοποίηση ειδοποιήσεων</button> <span id="apNotifInfo" style="font-size:14px;color:#666"></span></p>
+<div id="apform" class="card" style="display:none;background:#f5f7fa"><h3 id="aptitle">Νέο ραντεβού</h3>
+<div><label>Από καταχώρηση <span style="font-weight:400;font-size:14px;color:#666">(προαιρετικό – συμπληρώνει πινακίδα, πελάτη, τηλέφωνο, εργασία)</span></label><select id="ap_rec" onchange="apFromRec(this.value)"></select></div>
+<div class="grid">
+<div><label>Ημερομηνία *</label><input type="date" id="ap_date"></div>
+<div><label>Ώρα</label><input type="time" id="ap_time" step="300"></div>
+<div><label>Πελάτης</label><input id="ap_client" autocomplete="off"></div>
+<div><label>Τηλέφωνο</label><input id="ap_phone" type="tel" autocomplete="off"></div>
+<div><label>Πινακίδα</label><input id="ap_plate" style="text-transform:uppercase" autocomplete="off" oninput="this.value=this.value.toUpperCase()"></div>
+<div><label>Εργασία</label><select id="ap_job"></select></div>
+<div><label>Εργασία – λεπτομέρειες</label><input id="ap_jobText" autocomplete="off" placeholder="ελεύθερο κείμενο"></div>
+<div><label>Τόπος</label><input id="ap_place" list="apPlaces" autocomplete="off" placeholder="π.χ. ΚΤΕΛ, Διεύθυνση Μεταφορών, Εφορία, Γραφείο"><datalist id="apPlaces"><option value="ΚΤΕΛ"><option value="Διεύθυνση Μεταφορών"><option value="Εφορία"><option value="Γραφείο"></datalist></div>
+</div>
+<label>Σημειώσεις</label><textarea id="ap_notes" rows="2"></textarea>
+<div id="apErr" style="display:none;background:#b23b3b;color:#fff;padding:8px;border-radius:6px;font-weight:700;margin-top:8px"></div>
+<p><button type="button" class="ok" onclick="apSave()">Αποθήκευση</button> <button type="button" class="sec" onclick="apCancel()">Ακύρωση</button></p></div>
+<div id="aplist"></div>
+<details id="apold" style="margin-top:12px"><summary style="cursor:pointer;font-weight:600;padding:6px 0" id="apoldsum">Παλιά</summary><div id="apoldlist"></div></details>
+<p><button type="button" class="sec" onclick="closeM('apm')">Κλείσιμο</button></p></div></div>
 <div class="modal" id="sm"><div class="card"><h2>Ρυθμίσεις – Συνεργάτες</h2>
 <div id="plist"></div><label>Νέος συνεργάτης</label><input id="newp">
 <p><button type="button" class="ok" onclick="addPartner()">Προσθήκη</button> <button type="button" class="sec" onclick="closeM('sm')">Κλείσιμο</button></p>
@@ -260,7 +282,7 @@ const LABELS={date:"Ημερομηνία",plate:"Πινακίδα",type:"Τύπ�
 const KEY="metavivaseis_v1";let db,cur=null,fh=null,dirH=null,usbQ=Promise.resolve(),usbT=null;
 function load(){let ls=null;try{ls=JSON.parse(localStorage.getItem(KEY))}catch(e){}const f=window.__METAV_DATA;db=(f&&f.records&&(!ls||!ls.records||(f.savedAt||0)>=(ls.savedAt||0)))?JSON.parse(JSON.stringify(f)):ls;if(!db||!db.records)db={records:[],partners:DEFP.slice()};migrate();gxRun()}
 function migrate(){let ch=false;const OLD=["Θαγκόπουλος","Φαγκόπουλος"],N="Θαγγόπουλος";
-if(!Array.isArray(db.generalExpenses)){db.generalExpenses=[];ch=true}if(!Array.isArray(db.recurring)){db.recurring=[{id:"rent",label:"Ενοίκιο",amount:270,day:28,startMonth:"2026-10",active:true}];ch=true}
+if(!Array.isArray(db.generalExpenses)){db.generalExpenses=[];ch=true}if(!Array.isArray(db.appointments)){db.appointments=[];ch=true}if(!Array.isArray(db.recurring)){db.recurring=[{id:"rent",label:"Ενοίκιο",amount:270,day:28,startMonth:"2026-10",active:true}];ch=true}
 db.generalExpenses.forEach(e=>{if(e&&typeof e=="object")gxNorm(e)});if(!Array.isArray(db.providers)){db.providers=[...new Set(db.generalExpenses.map(e=>e.provider).filter(Boolean))].map(n=>({name:n,dueRule:{type:"none"},fixedAmount:""}));ch=true}if(!db.providers.some(p=>p.name=="ΕΦΚΑ")){db.providers.push({name:"ΕΦΚΑ",dueRule:{type:"lastWorking"},fixedAmount:""});ch=true}db.records.forEach(r=>{if(r.expenses===undefined)r.expenses="";if(r.expensesNote===undefined)r.expensesNote=""});
 db.partners=db.partners.map(p=>OLD.includes(p)?(ch=true,N):p).filter((p,i,a)=>a.indexOf(p)==i);
 db.records.forEach(r=>{const c=[];if(OLD.includes(r.partner)){c.push({f:"partner",from:r.partner,to:N});r.partner=N}
@@ -316,7 +338,7 @@ persist();closeM("fm");render();mvAfterSave(cur?cur.id:db.records[db.records.len
 function mvAfterSave(id){try{if(!filtered().some(r=>r.id==id)){["q","mq","df","dt","fp","fs","ft","fj"].forEach(x=>{const e=$(x);if(e)e.value=""});render()}
 const tr=[...document.querySelectorAll("#list tr")].find(t=>(t.getAttribute("onclick")||"").indexOf("'"+id+"'")>=0);
 if(tr){tr.scrollIntoView({block:"center"});tr.style.transition="background 1.5s";tr.style.background="#fff59d";setTimeout(()=>{tr.style.background=""},1600)}else window.scrollTo(0,0)}catch(e){console.error(e)}}
-function mvRefresh(){try{if(["fm","rm","sm","xm","rentm"].some(m=>{const e=$(m);return e&&e.style.display&&e.style.display!="none"}))return;load();fillSelects();render()}catch(e){console.error(e)}}
+function mvRefresh(){try{if(["fm","rm","sm","xm","rentm","apm"].some(m=>{const e=$(m);return e&&e.style.display&&e.style.display!="none"}))return;load();fillSelects();render()}catch(e){console.error(e)}}
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState=="visible")mvRefresh()});
 window.addEventListener("pageshow",e=>{if(e.persisted)mvRefresh()});
 window.addEventListener("storage",e=>{if(e.key===KEY||e.key===null)mvRefresh()});
@@ -494,7 +516,9 @@ function odMerge(local,remote){const del=Object.assign({},remote.deleted||{},loc
  [remote,local].forEach(d=>(d.records||[]).forEach(r=>{const o=m[r.id],t=r.updated||r.created||0;if(!o||t>=(o.updated||o.created||0))m[r.id]=r}));
  const recs=Object.values(m).filter(r=>!(del[r.id]&&del[r.id]>=(r.updated||r.created||0)));
  const parts=[...new Set([...(remote.partners||[]),...(local.partners||[])])];
- return{records:recs,partners:parts,deleted:del,savedAt:Date.now()}}
+ const am={};[remote,local].forEach(d=>(Array.isArray(d.appointments)?d.appointments:[]).forEach(a=>{if(!a||a.id==null)return;const o=am[a.id],t=a.updated||a.created||0;if(!o||t>=(o.updated||o.created||0))am[a.id]=Object.assign({},a,{notified:Object.assign({},o&&o.notified,a.notified)});else o.notified=Object.assign({},a.notified,o.notified)}));
+ const aps=Object.values(am).filter(a=>!(del[a.id]&&del[a.id]>=(a.updated||a.created||0)));
+ return{records:recs,partners:parts,deleted:del,appointments:aps,savedAt:Date.now()}}
 async function odPull(){odChip("sync");const r=await odFetch(OD_URL);
  if(r.status==404){await odPush(true);return}
  if(!r.ok)throw new Error("Graph "+r.status);const meta=await r.json();
@@ -557,21 +581,21 @@ for(i=0;i<cur.records.length;i++){r=cur.records[i];if(r.id!=null&&r.id!==""){byI
 for(i=0;i<inc.records.length;i++){r=inc.records[i];m=null;
 if(r.id!=null&&r.id!==""&&byId[String(r.id)])m=byId[String(r.id)];else if(r.id==null||r.id===""){m=byKey[mvKey(r)]||null}
 if(m){upd++;ops.push({t:"u",r:r,m:m})}else{add++;ops.push({t:"a",r:r})}}
-return {add:add,upd:upd,ops:ops,ids:ids}}
+return {add:add,upd:upd,ops:ops,ids:ids,ap:typeof apPlan=="function"?apPlan(cur,inc):null}}
 function mvSafety(){var s=JSON.stringify({savedAt:new Date().toISOString(),db:db});try{localStorage.setItem("metavivaseis_prev_backup",s);return true}catch(e){return false}}
 function mvApply(inc,p){var i,o,k,nid;
 for(i=0;i<p.ops.length;i++){o=p.ops[i];
 if(o.t=="u"){for(k in o.r)if(Object.prototype.hasOwnProperty.call(o.r,k)&&k!="id")o.m[k]=o.r[k]}
 else{var c=JSON.parse(JSON.stringify(o.r));if(c.id==null||c.id===""||p.ids[String(c.id)]){do{nid="imp"+new Date().getTime().toString(36)+Math.random().toString(36).slice(2,8)}while(p.ids[nid]);c.id=nid}p.ids[String(c.id)]=1;db.records.push(c)}}
-gxMerge(inc);if(!db.partners)db.partners=[];var ps=inc.partners||[];for(i=0;i<ps.length;i++){var have=false;for(k=0;k<db.partners.length;k++)if(db.partners[k]===ps[i])have=true;if(!have)db.partners.push(ps[i])}}
+gxMerge(inc);if(typeof apMerge=="function")apMerge(inc);if(!db.partners)db.partners=[];var ps=inc.partners||[];for(i=0;i<ps.length;i++){var have=false;for(k=0;k<db.partners.length;k++)if(db.partners[k]===ps[i])have=true;if(!have)db.partners.push(ps[i])}}
 function mvValid(d){if(!d||typeof d!=="object"||!d.records||Object.prototype.toString.call(d.records)!=="[object Array]")return false;for(var i=0;i<d.records.length;i++)if(!d.records[i]||typeof d.records[i]!=="object")return false;return true}
-function mvConfirmText(p){return "Θα προστεθούν "+p.add+" νέες και θα ενημερωθούν "+p.upd+" υπάρχουσες εγγραφές. Καμία δεν θα διαγραφεί. Συνέχεια;"}
-function mvDoneText(p){return "Ολοκληρώθηκε: "+p.add+" νέες, "+p.upd+" ενημερώθηκαν. Σύνολο "+db.records.length+" εγγραφές."}
+function mvConfirmText(p){return "Θα προστεθούν "+p.add+" νέες και θα ενημερωθούν "+p.upd+" υπάρχουσες εγγραφές."+(p.ap&&(p.ap.add||p.ap.upd)?" Ραντεβού: "+p.ap.add+" νέα, "+p.ap.upd+" ενημερώνονται.":"")+" Καμία δεν θα διαγραφεί. Συνέχεια;"}
+function mvDoneText(p){return "Ολοκληρώθηκε: "+p.add+" νέες, "+p.upd+" ενημερώθηκαν. Σύνολο "+db.records.length+" εγγραφές."+(p.ap&&(p.ap.add||p.ap.upd)?" Ραντεβού: "+p.ap.add+" νέα, "+p.ap.upd+" ενημερώθηκαν.":"")}
 function bkTextOf(f){function fr(){return new Promise(function(res,rej){try{var r=new FileReader();r.onload=function(){res(String(r.result||""))};r.onerror=function(){rej(r.error||new Error("FileReader"))};r.readAsText(f,"utf-8")}catch(e){rej(e)}})}
 var p=(f.text?f.text():Promise.reject(new Error("no text()")));return p.then(function(t){return t?t:fr()},function(e){console.warn("file.text() failed",e);return fr()})}
 function bkParse(t){t=String(t).replace(/^\uFEFF/,"").replace(/\u0000/g,"").trim();
 var m=/^(?:window\.)?[\w$.]+\s*=\s*/.exec(t)||/^(?:var|let|const)\s+[\w$]+\s*=\s*/.exec(t);if(m){t=t.slice(m[0].length).replace(/;\s*$/,"").trim()}
-var d=JSON.parse(t);if(Array.isArray(d))d={records:d};if(d&&!d.records&&d.db&&d.db.records)d=d.db;return d}
+var d=JSON.parse(t);if(Array.isArray(d))d={records:d};if(d&&!d.records&&d.db&&d.db.records)d=d.db;if(d&&typeof d=="object"&&!d.records&&Array.isArray(d.appointments))d.records=[];return d}
 function bkReadFile(f,cb){if(!f){cb&&cb(null);return}var info=" ["+(f.name||"?")+", "+(f.size==null?"?":f.size)+" bytes, type '"+(f.type||"")+"']";
 bkTextOf(f).then(function(t){if(!t||!t.replace(/[\s\u0000\uFEFF]/g,"")){var e=new Error("Το αρχείο δεν έχει κατέβει ακόμα από το OneDrive — ανοίξτε το μία φορά στα Αρχεία και ξαναδοκιμάστε");e.mvEmpty=1;throw e}
 var d;try{d=bkParse(t)}catch(e){e.message=(e.message||"")+" | διαβάστηκαν "+t.length+" χαρ., αρχή: «"+t.slice(0,40).replace(/\s+/g," ")+"»";throw e}
@@ -592,6 +616,96 @@ function bkPrompt(){var o=document.getElementById("bkPr");if(o)o.remove();o=docu
 o.style.cssText="position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:99999;background:#1f4e79;color:#fff;padding:12px 16px;border-radius:10px;display:flex;gap:10px;align-items:center;max-width:92%";
 o.innerHTML='<span>Έτοιμο για αντίγραφο.</span><button type="button" class="ok" id="bkPrBtn">Αποστολή αντιγράφου</button><button type="button" class="sec" id="bkPrX">✕</button>';
 document.body.appendChild(o);document.getElementById("bkPrBtn").onclick=function(){o.remove();bkExport()};document.getElementById("bkPrX").onclick=function(){o.remove()}}
+</script>
+<script>
+/* ===== Ραντεβού (v27) ===== */
+var AP_DAYS=["Κυριακή","Δευτέρα","Τρίτη","Τετάρτη","Πέμπτη","Παρασκευή","Σάββατο"],AP_DS=["Κυρ","Δευ","Τρί","Τετ","Πέμ","Παρ","Σάβ"],apCur=null;
+function apId(){return "ap"+Date.now().toString(36)+Math.random().toString(36).slice(2,6)}
+function apYMD(d){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
+function apNorm(a){if(a.client===undefined&&(a.name||a.customer))a.client=a.name||a.customer;["date","time","client","phone","plate","job","jobText","place","notes"].forEach(function(k){if(a[k]==null)a[k]="";a[k]=String(a[k])});
+ a.plate=a.plate.toUpperCase();if(/^\d{1,2}:\d{2}/.test(a.time))a.time=a.time.replace(/^(\d):/,"0$1:").slice(0,5);else a.time="";
+ if(!/^\d{4}-\d{2}-\d{2}$/.test(a.date)){var m=/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{4})$/.exec(a.date);a.date=m?m[3]+"-"+m[2].padStart(2,"0")+"-"+m[1].padStart(2,"0"):""}
+ if(!a.notified||typeof a.notified!="object")a.notified={};if(!a.created)a.created=Date.now();return a}
+function apTs(a){if(!a.date)return NaN;var p=a.date.split("-"),t=(a.time||"09:00").split(":");return new Date(+p[0],+p[1]-1,+p[2],+t[0],+t[1]).getTime()}
+function apEnd(a){if(!a.time){var p=a.date.split("-");return new Date(+p[0],+p[1]-1,+p[2]+1).getTime()}return apTs(a)+3600e3}
+function apList(){return (db&&Array.isArray(db.appointments)?db.appointments:[]).filter(function(a){return a&&typeof a=="object"&&a.date})}
+function apSort(L){return L.slice().sort(function(a,b){return apTs(a)-apTs(b)||(a.time?0:-1)-(b.time?0:-1)})}
+function apSplit(nowMs){nowMs=nowMs||Date.now();var L=apSort(apList());return{up:L.filter(function(a){return apEnd(a)>nowMs}),old:L.filter(function(a){return apEnd(a)<=nowMs}).reverse()}}
+function apTomorrow(nowMs){var d=new Date(nowMs||Date.now());d.setDate(d.getDate()+1);var t=apYMD(d);return apSort(apList().filter(function(a){return a.date==t}))}
+function apNextHour(nowMs){nowMs=nowMs||Date.now();return apSort(apList().filter(function(a){if(!a.time)return false;var t=apTs(a);return t>=nowMs&&t-nowMs<=3600e3}))}
+function apNext(nowMs){nowMs=nowMs||Date.now();return apSort(apList().filter(function(a){return a.time?apTs(a)>=nowMs:apEnd(a)>nowMs}))[0]||null}
+function apDayLabel(ds,nowMs){var n=new Date(nowMs||Date.now()),t=apYMD(n);n.setDate(n.getDate()+1);var tm=apYMD(n),p=ds.split("-"),d=new Date(+p[0],+p[1]-1,+p[2]);
+ return (ds==t?"Σήμερα, ":ds==tm?"Αύριο, ":"")+AP_DAYS[d.getDay()]+" "+fdate(ds)}
+function apShort(a){var p=a.date.split("-"),d=new Date(+p[0],+p[1]-1,+p[2]);return AP_DS[d.getDay()]+" "+fdate(a.date).slice(0,5)+(a.time?" "+a.time:"")}
+function apJob(a){return [a.job,a.jobText].filter(Boolean).join(" – ")}
+function apDesc(a){return [a.client,a.plate,apJob(a),a.place].filter(Boolean).join(" · ")}
+function apIn(ms){var m=Math.max(0,Math.round(ms/60000));return m<60?"σε "+m+"′":"σε "+Math.floor(m/60)+" ώρ. "+(m%60)+"′"}
+function apMatch(L,ne){var ex=null;if(ne.id!=null&&ne.id!=="")ex=L.find(function(x){return x.id==ne.id});
+ if(!ex&&(ne.id==null||ne.id===""))ex=L.find(function(x){return x.date==ne.date&&x.time==ne.time&&String(x.plate||"").replace(/\s+/g,"")==String(ne.plate||"").replace(/\s+/g,"")&&String(x.client||"").trim()==String(ne.client||"").trim()});return ex}
+function apPlan(cur,inc){var r={add:0,upd:0},L=(cur&&Array.isArray(cur.appointments)?cur.appointments:[]).slice();
+ (inc&&Array.isArray(inc.appointments)?inc.appointments:[]).forEach(function(a){if(!a||typeof a!="object")return;var ne=apNorm(JSON.parse(JSON.stringify(a)));if(!ne.date)return;var ex=apMatch(L,ne);if(ex)r.upd++;else{r.add++;L.push(ne)}});return r}
+function apMerge(inc){if(!Array.isArray(db.appointments))db.appointments=[];var n={add:0,upd:0};
+ (inc&&Array.isArray(inc.appointments)?inc.appointments:[]).forEach(function(a){if(!a||typeof a!="object")return;var ne=apNorm(JSON.parse(JSON.stringify(a)));if(!ne.date)return;
+  var ex=apMatch(db.appointments,ne);ne.updated=Date.now();
+  if(ex){var keepN=ex.notified||{},chg=ex.date!=ne.date||ex.time!=ne.time,id=ex.id;Object.assign(ex,ne);ex.id=id;if(!a.notified)ex.notified=chg?{}:keepN;n.upd++}
+  else{if(ne.id==null||ne.id===""||db.appointments.some(function(x){return x.id==ne.id}))ne.id=apId();ne.id=String(ne.id);db.appointments.push(ne);n.add++}
+  if(db.deleted&&db.deleted[ex?ex.id:ne.id])delete db.deleted[ex?ex.id:ne.id]});return n}
+function apAfter(){persist();try{window.awWrite&&awWrite()}catch(e){}apRender();apBanner()}
+function openAppointments(){if(!Array.isArray(db.appointments))db.appointments=[];apRender();$("apm").style.display="flex";apAskNotif(false)}
+function apRender(){var S=apSplit(),nowMs=Date.now(),hr=apNextHour(nowMs).map(function(a){return a.id}),last="",h="";
+ S.up.forEach(function(a){if(a.date!=last){last=a.date;h+='<h3 style="margin:14px 0 6px;color:#1f4e79">'+esc(apDayLabel(a.date,nowMs))+'</h3>'}h+=apRow(a,hr.indexOf(a.id)>=0,false)});
+ $("aplist").innerHTML=h||'<p style="color:#666">Δεν υπάρχουν προσεχή ραντεβού.</p>';
+ $("apoldsum").textContent="Παλιά ("+S.old.length+")";$("apold").style.display=S.old.length?"":"none";$("apoldlist").innerHTML=S.old.map(function(a){return apRow(a,false,true)}).join("");
+ var nb=$("apNotifBtn"),ni=$("apNotifInfo"),P=window.Notification?Notification.permission:"x";nb.style.display=P=="default"?"":"none";
+ ni.textContent=P=="granted"?"🔔 Ειδοποιήσεις ενεργές (όσο είναι ανοιχτή η εφαρμογή)":P=="denied"?"🔕 Οι ειδοποιήσεις είναι μπλοκαρισμένες από τον browser":P=="x"?"Ο browser δεν υποστηρίζει ειδοποιήσεις":""}
+function apRow(a,soon,old){var tel=a.phone?'<a href="tel:'+esc(a.phone)+'">'+esc(a.phone)+'</a>':"";
+ return '<div class="aprow" style="display:flex;flex-wrap:wrap;gap:6px 14px;align-items:center;border:1px solid '+(soon?"#ef6c00":"#d5dbe3")+';background:'+(soon?"#fff3e0":"#fff")+';border-radius:10px;padding:8px 10px;margin:0 0 8px;'+(old?"opacity:.55":"")+'">'
+ +'<b style="min-width:120px">'+(old?esc(fdate(a.date))+" ":"")+esc(a.time||"—")+(soon?' <span style="color:#ef6c00">⏰ '+esc(apIn(apTs(a)-Date.now()))+'</span>':"")+'</b>'
+ +'<span style="flex:1 1 260px">'+(a.client?'<b>'+esc(a.client)+'</b> ':"")+(a.plate?'<span class="st" style="background:#e6edf5">'+esc(a.plate)+'</span> ':"")+(apJob(a)?'<span class="st" style="background:#eee">'+esc(apJob(a))+'</span> ':"")+(a.place?"📍 "+esc(a.place)+" ":"")+tel
+ +(a.notes?'<div style="font-size:14px;color:#555;white-space:pre-wrap">'+esc(a.notes)+'</div>':"")+'</span>'
+ +'<span class="act"><button type="button" class="sec" data-id="'+esc(a.id)+'" onclick="apEdit(this.getAttribute(\'data-id\'))">Επεξεργασία</button><button type="button" class="del" data-id="'+esc(a.id)+'" onclick="apDel(this.getAttribute(\'data-id\'))">Διαγραφή</button></span></div>'}
+function apEdit(id){apCur=id!=null?apList().find(function(x){return String(x.id)==String(id)})||null:null;var a=apCur||{date:today(),time:"",client:"",phone:"",plate:"",job:"",jobText:"",place:"",notes:""};
+ var js=$("ap_job"),jl=[""].concat(JOBS);if(a.job&&jl.indexOf(a.job)<0)jl.push(a.job);while(js.options.length)js.remove(0);jl.forEach(function(x){js.add(new Option(x||"—",x))});
+ var rs=$("ap_rec");while(rs.options.length)rs.remove(0);rs.add(new Option("—",""));(db.records||[]).slice().sort(function(x,y){return (y.date||"").localeCompare(x.date||"")}).slice(0,400).forEach(function(r){rs.add(new Option([fdate(r.date),r.plate,r.name,r.job].filter(Boolean).join(" – "),String(r.id)))});rs.value=a.recordId||"";
+ ["date","time","client","phone","plate","job","jobText","place","notes"].forEach(function(k){$("ap_"+k).value=a[k]||""});
+ $("aptitle").textContent=apCur?"Επεξεργασία ραντεβού":"Νέο ραντεβού";$("apErr").style.display="none";$("apform").style.display="";if(!$("apm").style.display||$("apm").style.display=="none")openAppointments();
+ try{$("apform").scrollIntoView({block:"start"})}catch(e){}}
+function apFromRec(id){var r=(db.records||[]).find(function(x){return String(x.id)==String(id)});if(!r)return;$("ap_plate").value=(r.plate||"").toUpperCase();if(r.name)$("ap_client").value=r.name;if(r.phone)$("ap_phone").value=r.phone;
+ if(r.job){var js=$("ap_job");if([].some.call(js.options,function(o){return o.value==r.job}))js.value=r.job;else $("ap_jobText").value=r.job}}
+function apCancel(){$("apform").style.display="none";apCur=null}
+function apSave(){var v={};["date","time","client","phone","plate","job","jobText","place","notes"].forEach(function(k){v[k]=$("ap_"+k).value.trim()});v.plate=v.plate.toUpperCase();v.recordId=$("ap_rec").value||"";
+ if(!/^\d{4}-\d{2}-\d{2}$/.test(v.date)){$("apErr").textContent="Συμπληρώστε ημερομηνία.";$("apErr").style.display="";return}
+ if(!Array.isArray(db.appointments))db.appointments=[];
+ if(apCur){if(apCur.date!=v.date||apCur.time!=v.time)apCur.notified={};Object.assign(apCur,v);apCur.updated=Date.now();apNorm(apCur)}
+ else db.appointments.push(apNorm(Object.assign({id:apId(),created:Date.now(),updated:Date.now(),notified:{}},v)));
+ apCur=null;$("apform").style.display="none";apAfter();apAskNotif(false)}
+function apDel(id){var a=apList().find(function(x){return String(x.id)==String(id)});if(!a)return;
+ if(!confirm("Διαγραφή ραντεβού;\n"+apShort(a)+" – "+apDesc(a)))return;db.deleted=db.deleted||{};db.deleted[a.id]=Date.now();db.appointments=db.appointments.filter(function(x){return x!==a});if(apCur===a)apCancel();apAfter()}
+function apBanner(){var b=$("apBanner");if(!b)return;var nowMs=Date.now(),nx=apNext(nowMs),tm=apTomorrow(nowMs),hr=apNextHour(nowMs);
+ if(!nx&&!tm.length){b.style.display="none";b.innerHTML="";return}
+ var h='<div style="display:flex;flex-wrap:wrap;gap:6px 16px;align-items:center">';
+ if(nx){var soon=hr.indexOf(nx)>=0;h+='<span style="'+(soon?"background:#ef6c00;color:#fff;":"background:#e6edf5;")+'border-radius:8px;padding:4px 10px"><b>📅 Επόμενο ραντεβού:</b> '+esc(apShort(nx))+(apDesc(nx)?" — "+esc(apDesc(nx)):"")+(soon?" <b>⏰ "+esc(apIn(apTs(nx)-nowMs))+"</b>":"")+'</span>'}
+ hr.filter(function(a){return a!==nx}).forEach(function(a){h+='<span style="background:#ef6c00;color:#fff;border-radius:8px;padding:4px 10px">⏰ '+esc(a.time)+" "+esc(apDesc(a))+" ("+esc(apIn(apTs(a)-nowMs))+')</span>'});
+ h+='<span style="font-weight:700">Αύριο: '+tm.length+' ραντεβού</span>';
+ if(tm.length)h+='<span style="font-size:15px;color:#444">'+tm.map(function(a){return esc((a.time||"—")+" "+(apDesc(a)||""))}).join(" · ")+'</span>';
+ h+='<button type="button" class="sec" style="margin-left:auto;padding:6px 12px;font-size:15px">Ραντεβού</button></div>';
+ b.innerHTML=h;b.style.display=""}
+function apAskNotif(force){try{if(!window.Notification||Notification.permission!="default")return;if(!force&&localStorage.getItem("mv_ap_notif_asked"))return;localStorage.setItem("mv_ap_notif_asked","1");
+ var p=Notification.requestPermission(function(){if($("apm").style.display=="flex")apRender()});if(p&&p.then)p.then(function(){if($("apm").style.display=="flex")apRender();apTick()})}catch(e){}}
+function apShow(title,body,tag){try{if(!window.Notification||Notification.permission!="granted")return false;var o={body:body,tag:tag,icon:"icon-192.png"};
+ var fb=function(){try{new Notification(title,o)}catch(e){}};
+ if(navigator.serviceWorker&&navigator.serviceWorker.controller)navigator.serviceWorker.ready.then(function(r){return r.showNotification(title,o)}).catch(fb);else fb();return true}catch(e){return false}}
+function apDue(a,nowMs){var t=apTs(a),dt=t-nowMs,n=a.notified||{};if(!(dt>0))return null;if(dt<=3600e3&&!n.h1)return"h1";if(dt>3600e3&&dt<=86400e3&&!n.d1)return"d1";return null}
+function apTick(){try{if(!db||!Array.isArray(db.appointments))return;var nowMs=Date.now(),ch=false;
+ if(window.Notification&&Notification.permission=="granted")db.appointments.forEach(function(a){if(!a||!a.date)return;var k=apDue(a,nowMs);if(!k)return;
+  var ttl=k=="h1"?"⏰ Ραντεβού "+apIn(apTs(a)-nowMs)+" ("+(a.time||"")+")":"📅 Υπενθύμιση ραντεβού: "+apShort(a);
+  if(apShow(ttl,apDesc(a)+(a.phone?" · "+a.phone:""),"ap-"+a.id+"-"+k)){a.notified=a.notified||{};a.notified[k]=nowMs;if(k=="h1"&&!a.notified.d1)a.notified.d1=nowMs;ch=true}});
+ if(ch)persist();apBanner();if($("apm")&&$("apm").style.display=="flex"&&$("apform").style.display=="none")apRender()}catch(e){console.error("apTick",e)}}
+(function(){var r0=window.render;if(typeof r0=="function"){window.render=function(){var x=r0.apply(this,arguments);try{apBanner()}catch(e){}return x}}
+ var b=$("apBanner");if(b)b.onclick=function(e){openAppointments()};
+ try{if(!Array.isArray(db.appointments)){db.appointments=[]}}catch(e){}
+ apBanner();setInterval(apTick,60000);setTimeout(apTick,1500);
+ if(apList().length)setTimeout(function(){apAskNotif(false)},2000)})();
 </script>
 <script>
 (function(){
