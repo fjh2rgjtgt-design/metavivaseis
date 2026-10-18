@@ -418,7 +418,7 @@ for(let g=0;g<600;g++){const ym=y+"-"+String(m).padStart(2,"0");if(ym>cur)break;
   db.generalExpenses.push({id:"gx_"+rl.id+"_"+ym,date:ym+"-"+String(day).padStart(2,"0"),amount:+rl.amount||0,label:rl.label||"",auto:true,ruleId:rl.id,category:rl.category||"Επαγγελματικό",owner:"",provider:rl.label||"",dueDate:ym+"-"+String(day).padStart(2,"0"),rf:"",paid:false,paidDate:""});ch=true}
  m++;if(m>12){m=1;y++}}});
 if(ch){localStorage.setItem(KEY,JSON.stringify(db));try{window.awWrite&&awWrite()}catch(e){}}}catch(e){console.error("gxRun",e)}}
-function gxSame(a,b){if(!a||!b||a===b)return false;if(a.rf&&b.rf&&String(a.rf).replace(/\s/g,"")==String(b.rf).replace(/\s/g,""))return true;
+function gxSame(a,b){if(!a||!b||a===b)return false;if(a.rf&&b.rf&&String(a.rf).replace(/\s/g,"")==String(b.rf).replace(/\s/g,""))return (a.dueDate||a.date||"")==(b.dueDate||b.date||"");
 return !!(a.dueDate&&b.dueDate&&a.dueDate==b.dueDate&&Math.abs((+a.amount||0)-(+b.amount||0))<=0.01)}
 function gxMerge(inc){if(!db.generalExpenses)db.generalExpenses=[];if(!db.recurring)db.recurring=[];const imp=new Set();
 (inc.generalExpenses||[]).forEach(e=>{if(!e||typeof e!="object")return;const ne=JSON.parse(JSON.stringify(e));
