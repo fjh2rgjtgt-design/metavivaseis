@@ -343,6 +343,8 @@ document.addEventListener("visibilitychange",()=>{if(document.visibilityState=="
 window.addEventListener("pageshow",e=>{if(e.persisted)mvRefresh()});
 window.addEventListener("storage",e=>{if(e.key===KEY||e.key===null)mvRefresh()});
 const GXCAT=["Επαγγελματικό","Προσωπικό"];
+var gxLastAdd=0;function gxStamp(e){if(e&&!e.addedAt){let t=Date.now();if(t<=gxLastAdd)t=gxLastAdd+1;gxLastAdd=t;e.addedAt=t}return e}
+function gxAddKey(e){return +(e&&(e.addedAt||e.created||e.updated))||0}
 function gxNorm(e){if(e.afm===undefined){const m=/ΑΦΜ[:\s.]*(\d{9})/.exec((e.notes||"")+" "+(e.label||""));e.afm=m?m[1]:""}if(!e.category)e.category="Επαγγελματικό";if(e.paid===undefined)e.paid=false;["owner","provider","rf","paidDate","label","issueDate","notes"].forEach(k=>{if(e[k]===undefined)e[k]=""});if(!e.dueDate)e.dueDate=e.date||"";return e}
 function gxStatus(e){if(e.paid)return["Πληρωμένο","#2e7d32"];if(e.dueDate&&e.dueDate<today())return["Ληξιπρόθεσμο","#c62828"];return["Ανεξόφλητο","#ef6c00"]}
 function gxBiz(L){return L.filter(e=>(e.category||"Επαγγελματικό")!="Προσωπικό")}
@@ -356,7 +358,7 @@ const rows=billsFiltered().map(e=>[fdate(e.date),e.provider,e.label,e.owner,e.ca
 download("logariasmoi_"+today()+".csv","\uFEFF"+[H.map(q).join(";")].concat(rows).join("\r\n"),"text/csv;charset=utf-8")}
 function billsFiltered(){const pr=$("xfpr").value,c=$("xfc").value,o=$("xfo").value,st=$("xfs").value,d1=$("xd1").value,d2=$("xd2").value;
 return (db.generalExpenses||[]).map(gxNorm).filter(e=>(!pr||gxPv(e.provider)==gxPv(pr))&&(!c||e.category==c)&&(!o||e.owner==o)&&(!st||(st=="paid"?e.paid:st=="unpaid"?!e.paid:(!e.paid&&e.dueDate&&e.dueDate<today())))&&(!d1||(e.date||"")>=d1)&&(!d2||(e.date||"")<=d2))
-.sort((a,b)=>(b.dueDate||b.date||"").localeCompare(a.dueDate||a.date||""))}
+.map((e,i)=>[e,i]).sort((a,b)=>(gxAddKey(b[0])-gxAddKey(a[0]))||(b[1]-a[1])).map(x=>x[0])}
 function renderBills(){const L=billsFiltered(),sum=a=>a.reduce((t,e)=>t+(+e.amount||0),0);
 $("xlist").innerHTML=L.map(e=>{const s=gxStatus(e);return `<tr><td data-label="Ημ/νία">${fdate(e.date)}</td><td data-label="Περιγραφή">${(()=>{const det=[e.label&&e.label!=e.provider?e.label:"",e.afm?"ΑΦΜ: "+e.afm:"",e.notes||""].filter(Boolean).join("\n");return `<b>${esc(e.provider||e.label||"Έξοδο")}</b>${e.auto?" (αυτόματο)":""}${det?` <button type="button" class="xi" title="Σημειώσεις" onclick="this.nextElementSibling.classList.toggle('on')">ⓘ</button><div class="xn">${esc(det)}</div>`:""}`})()}</td><td data-label="Ιδιοκτήτης">${esc(e.owner)}</td><td data-label="Κατηγορία">${esc(e.category)}</td><td data-label="Ποσό"><b>${eur(e.amount)}</b></td><td data-label="Έκδοση">${fdate(e.issueDate)}</td><td data-label="Λήξη">${fdate(e.dueDate)}</td><td data-label="RF">${e.rf?`<code style="font-size:13px">${esc(e.rf)}</code> <button type="button" class="sec" onclick="gxCopy('${esc(e.rf)}')">Αντιγραφή</button>`:""}</td><td data-label="Κατάσταση"><span class="st" style="background:${s[1]};color:#fff">${s[0]}</span>${e.paid&&e.paidDate?`<div style="font-size:12px">${fdate(e.paidDate)}</div>`:""}</td><td class="act">${e.paid?"":`<button type="button" class="ok" onclick="gxPaid('${esc(e.id)}')">Πληρώθηκε</button>`}<button type="button" class="sec" onclick="gxEditForm('${esc(e.id)}')">Επεξεργασία</button><button type="button" class="del" onclick="gxDel('${esc(e.id)}')">Διαγραφή</button></td></tr>`}).join("")||'<tr><td colspan="10">Δεν υπάρχουν έξοδα.</td></tr>';
 $("xtot").innerHTML=`<span style="color:#ef6c00">Ανεξόφλητα: ${eur(sum(L.filter(e=>!e.paid)))}</span> — <span>Επαγγελματικά: ${eur(sum(gxBiz(L)))}</span> — <span>Προσωπικά: ${eur(sum(L.filter(e=>e.category=="Προσωπικό")))}</span> — Σύνολο: ${eur(sum(L))}`}
@@ -398,7 +400,7 @@ const am=$("x_amount");if(am.dataset.man!="1"&&am.dataset.auto=="1")am.value="";
 function gxSaveForm(){const a=+$("x_amount").value;if(!a&&a!==0||$("x_amount").value===""){alert("Συμπληρώστε ποσό.");return}
 const v={date:$("x_date").value||today(),amount:a,label:$("x_label").value.trim(),category:$("x_category").value||"Επαγγελματικό",owner:$("x_owner").value.trim(),provider:$("x_provider").value.trim(),dueDate:$("x_dueDate").value||$("x_date").value||today(),rf:$("x_rf").value.trim(),afm:$("x_afm").value.trim(),issueDate:$("x_issueDate").value,notes:$("x_notes").value.trim(),paid:$("x_paid").checked,paidDate:$("x_paidDate").value};
 if(v.paid&&!v.paidDate)v.paidDate=today();if(!v.paid)v.paidDate="";if(!v.label)v.label=v.provider||"Έξοδο";
-if(xEdit)Object.assign(xEdit,v);else db.generalExpenses.push(Object.assign({id:"gx"+Date.now().toString(36)+Math.random().toString(36).slice(2,6),auto:false},v));
+if(xEdit)Object.assign(xEdit,v);else db.generalExpenses.push(gxStamp(Object.assign({id:"gx"+Date.now().toString(36)+Math.random().toString(36).slice(2,6),auto:false},v)));
 $("xform").style.display="none";xEdit=null;gxAfter()}
 (function(){let y=0,locked=false;function chk(){const open=[...document.querySelectorAll(".modal")].some(m=>m.style.display&&m.style.display!="none");
 if(open&&!locked){y=window.scrollY||0;document.body.style.top=(-y)+"px";document.body.classList.add("mlock");locked=true}
@@ -415,7 +417,7 @@ db.recurring.forEach(rl=>{if(!rl.active||!rl.startMonth)return;rl.skip=rl.skip||
 for(let g=0;g<600;g++){const ym=y+"-"+String(m).padStart(2,"0");if(ym>cur)break;
  const last=new Date(y,m,0).getDate(),day=Math.min(+rl.day||1,last),due=new Date(y,m-1,day);
  if(now>=due&&!rl.skip.includes(ym)&&!db.generalExpenses.some(e=>e.ruleId==rl.id&&(e.date||"").slice(0,7)==ym)){
-  db.generalExpenses.push({id:"gx_"+rl.id+"_"+ym,date:ym+"-"+String(day).padStart(2,"0"),amount:+rl.amount||0,label:rl.label||"",auto:true,ruleId:rl.id,category:rl.category||"Επαγγελματικό",owner:"",provider:rl.label||"",dueDate:ym+"-"+String(day).padStart(2,"0"),rf:"",paid:false,paidDate:""});ch=true}
+  db.generalExpenses.push(gxStamp({id:"gx_"+rl.id+"_"+ym,date:ym+"-"+String(day).padStart(2,"0"),amount:+rl.amount||0,label:rl.label||"",auto:true,ruleId:rl.id,category:rl.category||"Επαγγελματικό",owner:"",provider:rl.label||"",dueDate:ym+"-"+String(day).padStart(2,"0"),rf:"",paid:false,paidDate:""}));ch=true}
  m++;if(m>12){m=1;y++}}});
 if(ch){localStorage.setItem(KEY,JSON.stringify(db));try{window.awWrite&&awWrite()}catch(e){}}}catch(e){console.error("gxRun",e)}}
 function gxSame(a,b){if(!a||!b||a===b)return false;if(a.rf&&b.rf&&String(a.rf).replace(/\s/g,"")==String(b.rf).replace(/\s/g,""))return (a.dueDate||a.date||"")==(b.dueDate||b.date||"");
@@ -424,9 +426,9 @@ function gxMerge(inc){if(!db.generalExpenses)db.generalExpenses=[];if(!db.recurr
 (inc.generalExpenses||[]).forEach(e=>{if(!e||typeof e!="object")return;const ne=JSON.parse(JSON.stringify(e));
  let ex=db.generalExpenses.find(x=>x.id==ne.id);
  if(!ex&&!(ne.ruleId&&ne.auto))ex=db.generalExpenses.find(x=>!imp.has(x.id)&&gxSame(x,ne));
- if(ex){if(ex.id==ne.id)Object.assign(ex,ne);else{Object.keys(ex).forEach(k=>delete ex[k]);Object.assign(ex,ne)}gxNorm(ex);imp.add(ex.id);return}
+ if(ex){const a0=ex.addedAt;if(ex.id==ne.id)Object.assign(ex,ne);else{Object.keys(ex).forEach(k=>delete ex[k]);Object.assign(ex,ne)}if(a0)ex.addedAt=a0;gxNorm(ex);imp.add(ex.id);return}
  if(ne.ruleId&&db.generalExpenses.some(x=>x.ruleId==ne.ruleId&&(x.date||"").slice(0,7)==(ne.date||"").slice(0,7)))return;
- db.generalExpenses.push(gxNorm(ne));imp.add(ne.id)});
+ db.generalExpenses.push(gxStamp(gxNorm(ne)));imp.add(ne.id)});
 // collapse duplicates (same rf or same dueDate+amount): keep imported one, else the later entry
 const G=db.generalExpenses,drop=new Set();
 for(let a=0;a<G.length;a++)for(let b=a+1;b<G.length;b++){if(drop.has(G[a])||drop.has(G[b])||!gxSame(G[a],G[b]))continue;
@@ -446,7 +448,7 @@ box.innerHTML=`<h2>Γενικά έξοδα</h2>`+(rl?`<p style="font-size:15px">
 +`<div style="font-size:15px">${(db.generalExpenses||[]).slice().sort((a,b)=>(b.date||"").localeCompare(a.date||"")).map(e=>`<div style="display:flex;gap:8px;align-items:center;margin:3px 0"><span style="flex:1">${fdate(e.date)} – ${esc(e.label)} – <b style="color:#c62828">${eur(e.amount)}</b>${e.auto?" (αυτόματο)":""}</span><button type="button" class="del" onclick="gxDel('${esc(e.id)}')">Διαγραφή</button></div>`).join("")||"Δεν υπάρχουν γενικά έξοδα."}</div>`
 +`<p style="font-size:15px">Νέο: <input id="gxNd" type="date" style="width:150px" value="${today()}"> <input id="gxNl" placeholder="Περιγραφή" style="width:150px"> <input id="gxNa" type="number" step="0.01" placeholder="€" style="width:90px"> <button type="button" class="ok" onclick="gxAdd()">Προσθήκη</button></p>`}
 function gxSaveRule(){const rl=db.recurring[0];rl.amount=+$("gxAmt").value||0;rl.day=Math.max(1,Math.min(31,+$("gxDay").value||1));rl.active=$("gxAct").checked;persist();gxRun();render();gxUI();try{awWrite()}catch(e){}}
-function gxAdd(){const a=+$("gxNa").value;if(!a){alert("Συμπληρώστε ποσό.");return}db.generalExpenses.push({id:"gx"+Date.now().toString(36)+Math.random().toString(36).slice(2,6),date:$("gxNd").value||today(),amount:a,label:$("gxNl").value.trim()||"Έξοδο",auto:false});persist();render();gxUI();try{awWrite()}catch(e){}}
+function gxAdd(){const a=+$("gxNa").value;if(!a){alert("Συμπληρώστε ποσό.");return}db.generalExpenses.push(gxStamp({id:"gx"+Date.now().toString(36)+Math.random().toString(36).slice(2,6),date:$("gxNd").value||today(),amount:a,label:$("gxNl").value.trim()||"Έξοδο",auto:false}));persist();render();gxUI();try{awWrite()}catch(e){}}
 function gxDel(id){const e=db.generalExpenses.find(x=>x.id==id);if(!e||!confirm("Διαγραφή γενικού εξόδου;\n"+fdate(e.date)+" – "+e.label+" – "+eur(e.amount)))return;
 if(e.auto&&e.ruleId){const rl=db.recurring.find(r=>r.id==e.ruleId);if(rl){rl.skip=rl.skip||[];rl.skip.push((e.date||"").slice(0,7))}}
 db.generalExpenses=db.generalExpenses.filter(x=>x!==e);gxAfter()}
