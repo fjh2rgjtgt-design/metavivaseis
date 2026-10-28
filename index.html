@@ -95,7 +95,7 @@ body.pdoc>*{display:none!important}body.pdoc>#printDoc{display:block!important}
 #printDoc{font-family:Arial,sans-serif;font-size:10.5pt;color:#000}#printDoc table{width:100%;border-collapse:collapse;display:table!important}#printDoc th,#printDoc td{display:table-cell!important;border:1px solid #999;padding:3px 5px;text-align:left;font-size:9.5pt}#printDoc tr{display:table-row!important}#printDoc thead{display:table-header-group!important}#printDoc tbody{display:table-row-group!important}#printDoc .ph{border-bottom:2px solid #000;margin-bottom:10px;padding-bottom:6px}#printDoc h2{font-size:14pt;margin:8px 0}#printDoc .kv td:first-child{width:35%;font-weight:bold}
 }
 </style></head><body>
-<header><h1>🚗 Μεταβιβάσεις Οχημάτων <small id="appVer" style="font-size:11px;font-weight:400;opacity:.6">v28</small></h1>
+<header><h1>🚗 Μεταβιβάσεις Οχημάτων <small id="appVer" style="font-size:11px;font-weight:400;opacity:.6">v29</small></h1>
 <button type="button" class="sec" id="menuBtn" onclick="this.parentNode.classList.toggle('open')">☰ Μενού</button>
 <div id="mbar"><input id="mq" type="search" placeholder="Αναζήτηση..." oninput="$('q').value=this.value;render()"><button type="button" class="sec" id="progBtnM" onclick="toggleInProgress()">Σε εξέλιξη</button><button type="button" class="sec" onclick="ccOpenSearch()">Πελάτες</button><button type="button" class="sec" onclick="document.body.classList.toggle('showf')">Φίλτρα</button><button type="button" class="ok" onclick="openForm()">+ Νέα</button></div>
 <button type="button" class="hx ok" onclick="openForm()">+ Νέα καταχώρηση</button>
@@ -125,6 +125,7 @@ body.pdoc>*{display:none!important}body.pdoc>#printDoc{display:block!important}
 <div class="noprint" style="display:flex;align-items:flex-end"><button type="button" class="sec" id="progBtnF" onclick="toggleInProgress()" style="width:100%">Σε εξέλιξη</button></div>
 <div><label>Τύπος οχήματος</label><select id="ft" onchange="render()"></select></div>
 <div><label>Τύπος εργασίας</label><select id="fj" onchange="render()"></select></div>
+<div class="noprint" style="display:flex;align-items:flex-end;margin-left:auto"><button type="button" class="sec" id="clrBtnF" onclick="clearFilters()" style="width:100%" title="Καθαρισμός όλων των φίλτρων">✕ Καθαρισμός φίλτρων</button></div>
 </div>
 <div class="card"><span class="tot" id="tot"></span></div>
 <div class="card"><table><thead><tr><th>Ημ/νία</th><th>Πινακίδα</th><th>Τύπος</th><th>Εργασία</th><th>Συνεργάτης</th><th>Αγοραστής</th><th>Τηλέφωνο</th><th>Bonus</th><th style="font-weight:400;color:#666">Παράβολα</th><th>Κατάσταση</th><th>Παρατηρήσεις</th><th></th></tr></thead><tbody id="list"></tbody></table></div>
@@ -163,7 +164,7 @@ body.pdoc>*{display:none!important}body.pdoc>#printDoc{display:block!important}
 <div><label>Ιδιοκτήτης</label><select id="xfo" onchange="renderBills()"><option value="">Όλοι</option></select></div>
 <div><label>Κατάσταση</label><select id="xfs" onchange="renderBills()"><option value="">Όλα</option><option value="unpaid">Ανεξόφλητα</option><option value="overdue">Ληξιπρόθεσμα</option><option value="paid">Πληρωμένα</option></select></div>
 <div><label>Από</label><input type="date" id="xd1" onchange="renderBills()"></div><div><label>Έως</label><input type="date" id="xd2" onchange="renderBills()"></div>
-<div><button type="button" class="ok" onclick="gxEditForm()">+ Νέο έξοδο</button> <button type="button" class="sec" onclick="openRent()">Ενοίκιο (κανόνας)</button> <button type="button" class="sec" onclick="exportBillsCSV()">Εξαγωγή λογαριασμών (CSV)</button> <button type="button" class="ok" onclick="bkOdSend()">Αποστολή στο OneDrive</button></div></div>
+<div><button type="button" class="sec" onclick="clearBillsFilters()" title="Καθαρισμός φίλτρων λογαριασμών">✕ Καθαρισμός</button> <button type="button" class="ok" onclick="gxEditForm()">+ Νέο έξοδο</button> <button type="button" class="sec" onclick="openRent()">Ενοίκιο (κανόνας)</button> <button type="button" class="sec" onclick="exportBillsCSV()">Εξαγωγή λογαριασμών (CSV)</button> <button type="button" class="ok" onclick="bkOdSend()">Αποστολή στο OneDrive</button></div></div>
 <p id="xtot" style="font-weight:700;font-size:17px"></p>
 <div id="xform" class="card" style="display:none;background:#f5f7fa"><h3 id="xftitle"></h3><div class="grid">
 <div><label>Ημερομηνία</label><input type="date" id="x_date"></div><div><label>Ποσό (€) *</label><input type="number" step="0.01" id="x_amount" oninput="gxMan(this)"></div>
@@ -323,6 +324,8 @@ function opts(el,arr,all){const keep=el.value;while(el.options.length)el.remove(
 function fillSelects(){opts($("fp"),db.partners,"Όλοι");opts($("fs"),STATUS,"Όλες");opts($("ft"),TYPES,"Όλοι");opts($("fj"),JOBS,"Όλες");opts($("f_job"),JOBS);opts($("f_type"),TYPES);opts($("f_partner"),db.partners);opts($("f_status"),STATUS);syncProgBtn()}
 function syncProgBtn(){const on=$("fs")&&$("fs").value===STATUS[0];["progBtn","progBtnM","progBtnF"].forEach(id=>{const b=$(id);if(!b)return;b.classList.toggle("ok",on);b.classList.toggle("sec",!on);b.setAttribute("aria-pressed",on?"true":"false")})}
 function toggleInProgress(){const s=$("fs");if(!s)return;s.value=s.value===STATUS[0]?"":STATUS[0];syncProgBtn();render()}
+function clearFilters(){["q","mq","df","dt","fp","fs","ft","fj"].forEach(id=>{const e=$(id);if(e)e.value=""});syncProgBtn();render()}
+function clearBillsFilters(){["xfpr","xfc","xfo","xfs","xd1","xd2"].forEach(id=>{const e=$(id);if(e)e.value=""});renderBills()}
 function printList(){syncProgBtn();render();const t=document.getElementById("printTitle");if(t)t.remove();const h=document.createElement("h1");h.id="printTitle";h.className="print-title";h.style.display="none";const d=new Date();const ds=d.toLocaleDateString("el-GR");const filt=$("fs")&&$("fs").value?(" — "+$("fs").value):"";h.textContent=(window.OFFICE?OFFICE+" — ":"")+"Μεταβιβάσεις Οχημάτων — Εκτύπωση: "+ds+filt;const main=document.querySelector("main");if(main)main.insertBefore(h,main.firstChild);setTimeout(function(){window.print()},50)}
 function filtered(noPartner){const D1=$("df").value,D2=$("dt").value;const q=$("q").value.trim().toLowerCase(),p=$("fp").value,s=$("fs").value,t=$("ft").value,j=$("fj").value;
 return db.records.filter(r=>(noPartner||!p||r.partner==p)&&(!D1||(r.date||"")>=D1)&&(!D2||(r.date||"")<=D2)&&(!s||r.status==s)&&(!t||r.type==t)&&(!j||r.job==j)&&(!q||[r.plate,r.job,r.name,r.phone,r.partner,r.notes,r.afm].join(" ").toLowerCase().includes(q)))
