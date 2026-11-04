@@ -96,7 +96,7 @@ body.pdoc>*{display:none!important}body.pdoc>#printDoc{display:block!important}
 #printDoc{font-family:Arial,sans-serif;font-size:10.5pt;color:#000}#printDoc table{width:100%;border-collapse:collapse;display:table!important}#printDoc th,#printDoc td{display:table-cell!important;border:1px solid #999;padding:3px 5px;text-align:left;font-size:9.5pt}#printDoc tr{display:table-row!important}#printDoc thead{display:table-header-group!important}#printDoc tbody{display:table-row-group!important}#printDoc .ph{border-bottom:2px solid #000;margin-bottom:10px;padding-bottom:6px}#printDoc h2{font-size:14pt;margin:8px 0}#printDoc .kv td:first-child{width:35%;font-weight:bold}
 }
 </style></head><body>
-<header><h1>🚗 Μεταβιβάσεις Οχημάτων <small id="appVer" style="font-size:11px;font-weight:400;opacity:.6">v32</small></h1>
+<header><h1>🚗 Μεταβιβάσεις Οχημάτων <small id="appVer" style="font-size:11px;font-weight:400;opacity:.6">v33</small></h1>
 <button type="button" class="sec" id="menuBtn" onclick="this.parentNode.classList.toggle('open')">☰ Μενού</button>
 <div id="mbar"><input id="mq" type="search" placeholder="Αναζήτηση..." oninput="$('q').value=this.value;render()"><button type="button" class="sec" id="progBtnM" onclick="toggleInProgress()">Σε εξέλιξη</button><button type="button" class="sec" onclick="ccOpenSearch()">Πελάτες</button><button type="button" class="sec" onclick="document.body.classList.toggle('showf')">Φίλτρα</button><button type="button" class="ok" onclick="openForm()">+ Νέα</button></div>
 <button type="button" class="hx ok" onclick="openForm()">+ Νέα καταχώρηση</button>
@@ -127,7 +127,7 @@ body.pdoc>*{display:none!important}body.pdoc>#printDoc{display:block!important}
 <div><label>Τύπος εργασίας</label><select id="fj" onchange="render()"></select></div>
 <div class="noprint" style="display:flex;align-items:flex-end;margin-left:auto"><button type="button" class="sec" id="clrBtnF" onclick="clearFilters()" style="width:100%" title="Καθαρισμός όλων των φίλτρων">✕ Καθαρισμός φίλτρων</button></div>
 </div>
-<div class="card"><span class="tot" id="tot"></span></div>
+<div class="card"><span class="tot" id="tot"></span><div id="tot2" style="display:flex;flex-wrap:wrap;gap:4px 14px;font-size:14px;margin-top:6px;color:#444"></div></div>
 <div class="card"><table><thead><tr><th>Ημ/νία</th><th>Πινακίδα</th><th>Τύπος</th><th>Εργασία</th><th>Συνεργάτης</th><th>Αγοραστής</th><th>Τηλέφωνο</th><th>Bonus</th><th style="font-weight:400;color:#666">Παράβολα</th><th>Κατάσταση</th><th>Παρατηρήσεις</th><th></th></tr></thead><tbody id="list"></tbody></table></div><div id="listPg" class="noprint pgnav"></div>
 </main>
 <div class="modal" id="fm"><div class="card">
@@ -349,7 +349,7 @@ return db.records.filter(r=>(noPartner||!p||r.partner==p)&&(!D1||(r.date||"")>=D
 var PG={};
 function render(){const L=filtered();
 $("list").innerHTML=pgSlice("list",L,50,["q","df","dt","fp","fs","ft","fj"]).map(r=>`<tr onclick="openForm('${r.id}')" style="cursor:pointer"><td data-label="Ημ/νία">${fdate(r.date)}</td><td class="pl"><b>${esc(r.plate)}</b></td><td data-label="Τύπος">${esc(r.type)}</td><td>${r.job?`<span class="st" style="background:#eee">${esc(r.job)}</span>`:""}</td><td data-label="Συνεργάτης">${r.partner?`<a href="#" class="cclink" title="Καρτέλα συνεργάτη" data-p="${esc(r.partner)}" onclick="event.cancelBubble=true;if(event.stopPropagation)event.stopPropagation();pcOpen(this.dataset.p);return false">${esc(r.partner)}</a>`:""}</td><td data-label="Αγοραστής">${r.name?`<a href="#" class="cclink" title="Καρτέλα πελάτη" onclick="event.cancelBubble=true;if(event.stopPropagation)event.stopPropagation();ccOpenRec('${r.id}');return false">${esc(r.name)}</a>`:""}</td><td data-label="Τηλ.">${r.phone?`<a href="tel:${esc(r.phone)}" onclick="event.cancelBubble=true;if(event.stopPropagation)event.stopPropagation()">${esc(r.phone)}</a>`:""}</td><td class="bon" data-label="Bonus">${r.bonus!==""&&r.bonus!=null?eur(r.bonus):""}</td><td style="color:#777;font-size:15px" data-label="Παράβολα">${r.amount!==""&&r.amount!=null?eur(r.amount):""}</td><td><span class="st s${STATUS.indexOf(r.status)}">${esc(r.status)}</span></td><td data-label="Σημ.">${esc(r.notes)}</td><td class="act"><button type="button" class="sec" onclick="event.cancelBubble=true;if(event.stopPropagation)event.stopPropagation();openForm('${r.id}');return false">Επεξεργασία</button><button type="button" class="del" onclick="event.cancelBubble=true;if(event.stopPropagation)event.stopPropagation();delRow('${r.id}');return false">Διαγραφή</button></td></tr>`).join("")||`<tr><td colspan="12">Δεν υπάρχουν καταχωρήσεις.</td></tr>`;
-{const LB=bpRecs(L),bl=bpRange().lab;$("tot").innerHTML=`<span style="color:#2e7d32">Σύνολο Bonus${bl=="Όλα"?"":" ("+esc(bl)+")"}: ${eur(LB.reduce((a,r)=>a+(+r.bonus||0),0))}</span> <span style="font-weight:400;font-size:13px;color:#1f4e79;cursor:pointer" title="Περίοδος μπόνου" onclick="openBonusPeriod()">[Περίοδος: ${esc(bl)}]</span> <span style="font-weight:400;font-size:16px;color:#555">— Καταχωρήσεις: ${L.length} — Ποσά για παράβολα: ${eur(L.reduce((a,r)=>a+(+r.amount||0),0))}</span>${gxTotHtml(L)}`;}syncProgBtn()}
+{const LB=bpRecs(L),bl=bpRange().lab;$("tot").innerHTML=`<span style="color:#2e7d32">Σύνολο Bonus${bl=="Όλα"?"":" ("+esc(bl)+")"}: ${eur(LB.reduce((a,r)=>a+(+r.bonus||0),0))}</span> <span style="font-weight:400;font-size:13px;color:#1f4e79;cursor:pointer" title="Περίοδος μπόνου" onclick="openBonusPeriod()">[Περίοδος: ${esc(bl)}]</span> <span style="font-weight:400;font-size:16px;color:#555">— Καταχωρήσεις: ${L.length} — Ποσά για παράβολα: ${eur(L.reduce((a,r)=>a+(+r.amount||0),0))}</span>${gxTotHtml(L)}`;try{bpRow()}catch(e){console.warn("bpRow",e)}}syncProgBtn()}
 const F=["date","plate","type","job","partner","name","afm","addr","phone","amount","bonus","expenses","expensesNote","status","notes"];
 function openForm(id){cur=id?db.records.find(r=>r.id==id):null;fillSelects();
 F.forEach(k=>$("f_"+k).value=cur?(cur[k]??""):"");if(!cur){$("f_date").value=today();$("f_status").value=STATUS[0];$("f_type").value=TYPES[0];$("f_job").value=JOBS[0]}
@@ -477,6 +477,11 @@ document.querySelectorAll('input[name=bpMode]').forEach(x=>x.checked=x.value==(b
 function saveBonusPeriod(){const m=(document.querySelector('input[name=bpMode]:checked')||{}).value||"all";localStorage.setItem("mv_bonus_period",JSON.stringify({mode:m,year:$("bpYear").value,from:$("bpFrom").value,to:$("bpTo").value}));closeM("bpm");render()}
 function gxPeriod(){const D1=$("df").value,D2=$("dt").value;return (db.generalExpenses||[]).filter(e=>(!D1||(e.date||"")>=D1)&&(!D2||(e.date||"")<=D2))}
 function gxPeriodSum(){return gxBiz(gxPeriod()).reduce((a,e)=>a+(+e.amount||0),0)}
+function bpRow(){const r=bpRange(),inR=d=>(!r.f||(d||"")>=r.f)&&(!r.t||(d||"")<=r.t),
+RP=db.records.filter(x=>inR(x.date)),GP=(db.generalExpenses||[]).filter(e=>inR(e.date)),S=(a,k)=>a.reduce((s,x)=>s+(+x[k]||0),0),
+B=S(RP,"bonus"),PA=S(RP,"amount"),EX=S(RP,"expenses"),BZ=S(gxBiz(GP),"amount"),PR=S(GP.filter(e=>e.category=="Προσωπικό"),"amount"),
+c=(t,v,col)=>`<span style="white-space:nowrap">${t}: <b style="color:${col||"#c62828"}">${eur(v)}</b></span>`;
+$("tot2").innerHTML=c("Παράβολα",PA,"#555")+c("Έξοδα γενικά",EX)+c("Επαγγελματικά έξοδα",BZ)+c("Καθαρό",B-EX-BZ,"#1f4e79")+c("Προσωπικά έξοδα",PR,"#777")}
 function gxPersSum(){return gxPeriod().filter(e=>e.category=="Προσωπικό").reduce((a,e)=>a+(+e.amount||0),0)}
 function gxSum(L){return L.reduce((a,r)=>a+(+r.expenses||0),0)}
 function gxTotHtml(L){const b=L.reduce((a,r)=>a+(+r.bonus||0),0),e=gxSum(L),g=gxPeriodSum();
