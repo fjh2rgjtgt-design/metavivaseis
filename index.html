@@ -96,13 +96,12 @@ body.pdoc>*{display:none!important}body.pdoc>#printDoc{display:block!important}
 #printDoc{font-family:Arial,sans-serif;font-size:10.5pt;color:#000}#printDoc table{width:100%;border-collapse:collapse;display:table!important}#printDoc th,#printDoc td{display:table-cell!important;border:1px solid #999;padding:3px 5px;text-align:left;font-size:9.5pt}#printDoc tr{display:table-row!important}#printDoc thead{display:table-header-group!important}#printDoc tbody{display:table-row-group!important}#printDoc .ph{border-bottom:2px solid #000;margin-bottom:10px;padding-bottom:6px}#printDoc h2{font-size:14pt;margin:8px 0}#printDoc .kv td:first-child{width:35%;font-weight:bold}
 }
 </style></head><body>
-<header><h1>🚗 Μεταβιβάσεις Οχημάτων <small id="appVer" style="font-size:11px;font-weight:400;opacity:.6">v31</small></h1>
+<header><h1>🚗 Μεταβιβάσεις Οχημάτων <small id="appVer" style="font-size:11px;font-weight:400;opacity:.6">v32</small></h1>
 <button type="button" class="sec" id="menuBtn" onclick="this.parentNode.classList.toggle('open')">☰ Μενού</button>
 <div id="mbar"><input id="mq" type="search" placeholder="Αναζήτηση..." oninput="$('q').value=this.value;render()"><button type="button" class="sec" id="progBtnM" onclick="toggleInProgress()">Σε εξέλιξη</button><button type="button" class="sec" onclick="ccOpenSearch()">Πελάτες</button><button type="button" class="sec" onclick="document.body.classList.toggle('showf')">Φίλτρα</button><button type="button" class="ok" onclick="openForm()">+ Νέα</button></div>
 <button type="button" class="hx ok" onclick="openForm()">+ Νέα καταχώρηση</button>
 <button type="button" class="hx sec" onclick="exportCSV()">Εξαγωγή Excel</button>
 <button type="button" class="hx sec" id="oldDelBtn" onclick="oldDelOpen()">Διαγραφή</button>
-<button type="button" class="hx sec" id="bkExp" onclick="bkExport()">Εξαγωγή</button>
 <button type="button" class="hx sec" id="bkImp" onclick="bkImport()">Εισαγωγή</button>
 <input type="file" id="bkFile" accept=".json,application/json,text/plain,*/*" style="display:none" onchange="var inp=this,f=inp.files&&inp.files[0],done=function(){setTimeout(function(){inp.value=''},0)};if(bkSyncMode){bkSyncMode=false;bkReadFile(f,function(p){done();bkSyncAfter(p)})}else bkReadFile(f,done)">
 <button type="button" class="hx sec" id="progBtn" onclick="toggleInProgress()">Σε εξέλιξη</button>
@@ -211,9 +210,20 @@ body.pdoc>*{display:none!important}body.pdoc>#printDoc{display:block!important}
 <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:end;font-size:15px"><div><label>Έτος</label><select id="pcY" onchange="pcRender()"></select></div><div><label>Μήνας</label><select id="pcM" onchange="pcRender()"></select></div></div>
 <div id="pcBody"></div>
 <p><button type="button" class="ok" onclick="pcPrint()">Εκτύπωση</button> <button type="button" class="sec" onclick="closeM('pcm')">Κλείσιμο</button></p></div></div>
-<div class="modal" id="sm"><div class="card"><h2>Ρυθμίσεις – Συνεργάτες</h2>
+<div class="modal" id="smenu"><div class="card" style="max-width:420px"><h2>Ρυθμίσεις</h2>
+<p><button type="button" class="ok" style="width:100%;margin:4px 0" onclick="closeM('smenu');openPartners()">Συνεργάτες</button></p>
+<p><button type="button" class="ok" style="width:100%;margin:4px 0" onclick="closeM('smenu');openBonusPeriod()">Περίοδος μπόνου</button></p>
+<p><button type="button" class="sec" onclick="closeM('smenu')">Κλείσιμο</button></p></div></div>
+<div class="modal" id="bpm"><div class="card" style="max-width:480px"><h2>Περίοδος μπόνου</h2>
+<p style="font-size:15px">Ισχύει για το Σύνολο Bonus της αρχικής σελίδας. Αν συμπληρωθούν τα πεδία «Από/Έως ημερομηνία» της κεντρικής οθόνης, υπερισχύουν εκείνα.</p>
+<label><input type="radio" name="bpMode" value="all"> Όλα</label>
+<label><input type="radio" name="bpMode" value="year"> Έτος <select id="bpYear" style="width:auto"></select></label>
+<label><input type="radio" name="bpMode" value="range"> Από <input type="date" id="bpFrom" style="width:auto"> έως <input type="date" id="bpTo" style="width:auto"></label>
+<p><button type="button" class="ok" onclick="saveBonusPeriod()">Αποθήκευση</button> <button type="button" class="sec" onclick="closeM('bpm')">Κλείσιμο</button></p></div></div>
+<div class="modal" id="sm"><div class="card"><div id="pSec"><h2>Ρυθμίσεις – Συνεργάτες</h2>
 <div id="plist"></div><label>Νέος συνεργάτης</label><input id="newp">
-<p><button type="button" class="ok" onclick="addPartner()">Προσθήκη</button> <button type="button" class="sec" onclick="closeM('sm')">Κλείσιμο</button></p>
+<p><button type="button" class="ok" onclick="addPartner()">Προσθήκη</button></p></div>
+<p><button type="button" class="sec" onclick="closeM('sm')">Κλείσιμο</button></p>
 <div id="dataDirBox" style="display:none;border-top:2px solid #ccd;margin-top:16px;padding-top:8px"><h2>Φάκελος δεδομένων</h2><p style="font-size:15px">Πού αποθηκεύεται το metavivaseis_data.json. Κενό = δίπλα στην εφαρμογή. Π.χ. C:\Users\xasir\OneDrive\Metavivaseis για συγχρονισμό με OneDrive.</p><input id="dataDir" placeholder="(δίπλα στην εφαρμογή)"><p id="dataDirCur" style="font-size:14px;color:#555"></p><p><button type="button" class="ok" onclick="saveDataDir()">Αποθήκευση φακέλου</button></p></div></div></div>
 <script>/* MSAL.js v3.27.0 (MIT, Microsoft) – ενσωματωμένο για offline */
 /*! @azure/msal-browser v3.27.0 2024-11-05 */
@@ -314,7 +324,7 @@ function oldDelList(){const R=oldDelRange();if(!R)return[];return db.records.fil
 function oldDelShow(){const fd=d=>d.split("-").reverse().join("/");const f=$("old_from").value,t=$("old_to").value;let L=[];if(!f||!t)$("old_info").textContent="Επίλεξε ημερομηνία Από και Έως.";else if(f>t)$("old_info").textContent="Η ημερομηνία Από πρέπει να είναι πριν ή ίδια με την Έως.";else{L=oldDelList().slice().sort((a,b)=>a.date<b.date?-1:1);$("old_info").textContent="Εγγραφές από "+fd(f)+" έως και "+fd(t)+": "+L.length+(L.length?" — θα διαγραφούν οι παρακάτω:":" — δεν υπάρχει τίποτα για διαγραφή.")}$("old_list").innerHTML=L.map(r=>"<div><b>"+esc(r.plate||"(χωρίς πινακίδα)")+"</b> – "+fd(r.date)+" – "+esc(r.name||"")+"</div>").join("");$("old_ok").style.display=L.length?"":"none"}
 function oldDelOpen(){oldDelShow();$("oldm").style.display="flex"}
 function oldDelDo(){const R=oldDelRange();const L=oldDelList();if(!R||!L.length){closeM("oldm");return}const fd=d=>d.split("-").reverse().join("/");if(!confirm("Οριστική διαγραφή "+L.length+" εγγραφών με ημερομηνία από "+fd(R.f)+" έως "+fd(R.t)+";"))return;const t=Date.now();db.deleted=db.deleted||{};L.forEach(r=>{if(r.id!=null)db.deleted[r.id]=t});db.records=db.records.filter(r=>!L.includes(r));persist();closeM("oldm");render()}
-function persist(){db.savedAt=Date.now();localStorage.setItem(KEY,JSON.stringify(db));if(fh)writeLinked();usbSave();if(window.odSave)window.odSave()}
+function persist(){db.savedAt=Date.now();localStorage.setItem(KEY,JSON.stringify(db));try{if(fh)writeLinked()}catch(e){}usbSave();if(window.odSave)window.odSave()}
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const today=()=>{const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")};
@@ -339,7 +349,7 @@ return db.records.filter(r=>(noPartner||!p||r.partner==p)&&(!D1||(r.date||"")>=D
 var PG={};
 function render(){const L=filtered();
 $("list").innerHTML=pgSlice("list",L,50,["q","df","dt","fp","fs","ft","fj"]).map(r=>`<tr onclick="openForm('${r.id}')" style="cursor:pointer"><td data-label="Ημ/νία">${fdate(r.date)}</td><td class="pl"><b>${esc(r.plate)}</b></td><td data-label="Τύπος">${esc(r.type)}</td><td>${r.job?`<span class="st" style="background:#eee">${esc(r.job)}</span>`:""}</td><td data-label="Συνεργάτης">${r.partner?`<a href="#" class="cclink" title="Καρτέλα συνεργάτη" data-p="${esc(r.partner)}" onclick="event.cancelBubble=true;if(event.stopPropagation)event.stopPropagation();pcOpen(this.dataset.p);return false">${esc(r.partner)}</a>`:""}</td><td data-label="Αγοραστής">${r.name?`<a href="#" class="cclink" title="Καρτέλα πελάτη" onclick="event.cancelBubble=true;if(event.stopPropagation)event.stopPropagation();ccOpenRec('${r.id}');return false">${esc(r.name)}</a>`:""}</td><td data-label="Τηλ.">${r.phone?`<a href="tel:${esc(r.phone)}" onclick="event.cancelBubble=true;if(event.stopPropagation)event.stopPropagation()">${esc(r.phone)}</a>`:""}</td><td class="bon" data-label="Bonus">${r.bonus!==""&&r.bonus!=null?eur(r.bonus):""}</td><td style="color:#777;font-size:15px" data-label="Παράβολα">${r.amount!==""&&r.amount!=null?eur(r.amount):""}</td><td><span class="st s${STATUS.indexOf(r.status)}">${esc(r.status)}</span></td><td data-label="Σημ.">${esc(r.notes)}</td><td class="act"><button type="button" class="sec" onclick="event.cancelBubble=true;if(event.stopPropagation)event.stopPropagation();openForm('${r.id}');return false">Επεξεργασία</button><button type="button" class="del" onclick="event.cancelBubble=true;if(event.stopPropagation)event.stopPropagation();delRow('${r.id}');return false">Διαγραφή</button></td></tr>`).join("")||`<tr><td colspan="12">Δεν υπάρχουν καταχωρήσεις.</td></tr>`;
-$("tot").innerHTML=`<span style="color:#2e7d32">Σύνολο Bonus: ${eur(L.reduce((a,r)=>a+(+r.bonus||0),0))}</span> <span style="font-weight:400;font-size:16px;color:#555">— Καταχωρήσεις: ${L.length} — Ποσά για παράβολα: ${eur(L.reduce((a,r)=>a+(+r.amount||0),0))}</span>${gxTotHtml(L)}`;syncProgBtn()}
+{const LB=bpRecs(L),bl=bpRange().lab;$("tot").innerHTML=`<span style="color:#2e7d32">Σύνολο Bonus${bl=="Όλα"?"":" ("+esc(bl)+")"}: ${eur(LB.reduce((a,r)=>a+(+r.bonus||0),0))}</span> <span style="font-weight:400;font-size:13px;color:#1f4e79;cursor:pointer" title="Περίοδος μπόνου" onclick="openBonusPeriod()">[Περίοδος: ${esc(bl)}]</span> <span style="font-weight:400;font-size:16px;color:#555">— Καταχωρήσεις: ${L.length} — Ποσά για παράβολα: ${eur(L.reduce((a,r)=>a+(+r.amount||0),0))}</span>${gxTotHtml(L)}`;}syncProgBtn()}
 const F=["date","plate","type","job","partner","name","afm","addr","phone","amount","bonus","expenses","expensesNote","status","notes"];
 function openForm(id){cur=id?db.records.find(r=>r.id==id):null;fillSelects();
 F.forEach(k=>$("f_"+k).value=cur?(cur[k]??""):"");if(!cur){$("f_date").value=today();$("f_status").value=STATUS[0];$("f_type").value=TYPES[0];$("f_job").value=JOBS[0]}
@@ -457,6 +467,14 @@ for(let a=0;a<G.length;a++)for(let b=a+1;b<G.length;b++){if(drop.has(G[a])||drop
 if(drop.size)db.generalExpenses=G.filter(x=>!drop.has(x));
 (inc.recurring||[]).forEach(r=>{if(r&&!db.recurring.some(x=>x.id==r.id))db.recurring.push(JSON.parse(JSON.stringify(r)))});
 if(!db.providers)db.providers=[];(inc.providers||[]).forEach(p=>{if(p&&p.name&&!gxProv(p.name))db.providers.push(JSON.parse(JSON.stringify(p)))})}
+function bpGet(){try{return JSON.parse(localStorage.getItem("mv_bonus_period"))||{mode:"all"}}catch(e){return{mode:"all"}}}
+function bpRange(){const D1=$("df").value,D2=$("dt").value;if(D1||D2)return{f:D1,t:D2,lab:(D1?fdate(D1):"αρχή")+" – "+(D2?fdate(D2):"σήμερα"),main:true};
+const b=bpGet();if(b.mode=="year"&&b.year)return{f:b.year+"-01-01",t:b.year+"-12-31",lab:"Έτος "+b.year};if(b.mode=="range"&&(b.from||b.to))return{f:b.from||"",t:b.to||"",lab:(b.from?fdate(b.from):"αρχή")+" – "+(b.to?fdate(b.to):"σήμερα")};return{f:"",t:"",lab:"Όλα"}}
+function bpRecs(L){const r=bpRange();if(r.main)return L;return L.filter(x=>(!r.f||(x.date||"")>=r.f)&&(!r.t||(x.date||"")<=r.t))}
+function openBonusPeriod(){const b=bpGet(),ys={};db.records.forEach(r=>{if(r.date)ys[r.date.slice(0,4)]=1});ys[String(new Date().getFullYear())]=1;
+$("bpYear").innerHTML=Object.keys(ys).sort().reverse().map(y=>`<option>${y}</option>`).join("");if(b.year)$("bpYear").value=b.year;$("bpFrom").value=b.from||"";$("bpTo").value=b.to||"";
+document.querySelectorAll('input[name=bpMode]').forEach(x=>x.checked=x.value==(b.mode||"all"));$("bpm").style.display="flex"}
+function saveBonusPeriod(){const m=(document.querySelector('input[name=bpMode]:checked')||{}).value||"all";localStorage.setItem("mv_bonus_period",JSON.stringify({mode:m,year:$("bpYear").value,from:$("bpFrom").value,to:$("bpTo").value}));closeM("bpm");render()}
 function gxPeriod(){const D1=$("df").value,D2=$("dt").value;return (db.generalExpenses||[]).filter(e=>(!D1||(e.date||"")>=D1)&&(!D2||(e.date||"")<=D2))}
 function gxPeriodSum(){return gxBiz(gxPeriod()).reduce((a,e)=>a+(+e.amount||0),0)}
 function gxPersSum(){return gxPeriod().filter(e=>e.category=="Προσωπικό").reduce((a,e)=>a+(+e.amount||0),0)}
@@ -466,7 +484,7 @@ return ` <span style="font-weight:400;font-size:16px;color:#c62828">— Έξοδ
 function gxUI(){let box=$("gxBox");const card=$("sm").querySelector(".card");if(!box){box=document.createElement("div");box.id="gxBox";box.style.cssText="border-top:2px solid #ccd;margin-top:16px;padding-top:8px";const pl=$("plist");pl.parentNode.insertBefore(box,$("dataDirBox")||null)}
 const rl=(db.recurring||[])[0];
 box.innerHTML=`<h2>Γενικά έξοδα</h2>`+(rl?`<p style="font-size:15px"><b>${esc(rl.label)}</b> κάθε μήνα: <input id="gxAmt" type="number" step="0.01" style="width:90px" value="${esc(rl.amount)}"> € την ημέρα <input id="gxDay" type="number" min="1" max="31" style="width:60px" value="${esc(rl.day)}"> <label style="display:inline"><input type="checkbox" id="gxAct" ${rl.active?"checked":""}> ενεργό</label> <button type="button" class="ok" onclick="gxSaveRule()">Αποθήκευση</button></p>`:"")
-+`<div style="font-size:15px">${(db.generalExpenses||[]).slice().sort((a,b)=>(b.date||"").localeCompare(a.date||"")).map(e=>`<div style="display:flex;gap:8px;align-items:center;margin:3px 0"><span style="flex:1">${fdate(e.date)} – ${esc(e.label)} – <b style="color:#c62828">${eur(e.amount)}</b>${e.auto?" (αυτόματο)":""}</span><button type="button" class="del" onclick="gxDel('${esc(e.id)}')">Διαγραφή</button></div>`).join("")||"Δεν υπάρχουν γενικά έξοδα."}</div>`
++`<div style="font-size:15px">${(db.generalExpenses||[]).slice().sort((a,b)=>(b.date||"").localeCompare(a.date||"")).map(e=>`<div style="display:flex;gap:8px;align-items:center;margin:3px 0"><span style="flex:1">${fdate(e.date)} – ${esc(e.label)} – <b style="color:#c62828">${eur(e.amount)}</b>${e.auto?" (αυτόματο)":""}</span></div>`).join("")||"Δεν υπάρχουν γενικά έξοδα."}</div>`
 +`<p style="font-size:15px">Νέο: <input id="gxNd" type="date" style="width:150px" value="${today()}"> <input id="gxNl" placeholder="Περιγραφή" style="width:150px"> <input id="gxNa" type="number" step="0.01" placeholder="€" style="width:90px"> <button type="button" class="ok" onclick="gxAdd()">Προσθήκη</button></p>`}
 function gxSaveRule(){const rl=db.recurring[0];rl.amount=+$("gxAmt").value||0;rl.day=Math.max(1,Math.min(31,+$("gxDay").value||1));rl.active=$("gxAct").checked;persist();gxRun();render();gxUI();try{awWrite()}catch(e){}}
 function gxAdd(){const a=+$("gxNa").value;if(!a){alert("Συμπληρώστε ποσό.");return}db.generalExpenses.push(gxStamp({id:"gx"+Date.now().toString(36)+Math.random().toString(36).slice(2,6),date:$("gxNd").value||today(),amount:a,label:$("gxNl").value.trim()||"Έξοδο",auto:false}));persist();render();gxUI();try{awWrite()}catch(e){}}
@@ -485,9 +503,11 @@ $("rlist").innerHTML=rows.map(([k,g])=>`<tr style="cursor:pointer" data-p="${esc
 +`<tr style="background:#e6edf5"><td><b>ΣΥΝΟΛΟ</b></td><td data-label="Εργασίες">${L.length}</td><td data-label="Bonus"><b>${eur(L.reduce((a,r)=>a+(+r.bonus||0),0))}</b></td><td></td><td></td><td style="font-size:15px">${eur(L.reduce((a,r)=>a+(+r.amount||0),0))}</td><td style="color:#c62828" data-label="Έξοδα">${eur(gxSum(L))}</td><td data-label="Καθαρό"><b>${eur(L.reduce((a,r)=>a+(+r.bonus||0),0)-gxSum(L))}</b></td></tr>`+(gxBiz(gxPeriod()).length?`<tr style="background:#fdecea"><td><b>Γενικά επαγγελματικά έξοδα</b></td><td data-label="Εγγραφές">${gxBiz(gxPeriod()).length}</td><td></td><td></td><td></td><td></td><td style="color:#c62828" data-label="Γενικά έξοδα">${eur(gxPeriodSum())}</td><td></td></tr>`:"")+`<tr style="background:#dfe9d8"><td><b>ΚΑΘΑΡΟ ΣΥΝΟΛΟ</b></td><td></td><td></td><td></td><td></td><td></td><td></td><td data-label="Καθαρό"><b>${eur(L.reduce((a,r)=>a+(+r.bonus||0),0)-gxSum(L)-gxPeriodSum())}</b></td></tr>`;
 $("rm").style.display="flex"}
 function pickPartner(p){if(![...$("fp").options].some(o=>o.value==p))$("fp").add(new Option(p,p));$("fp").value=p;closeM("rm");render()}
-function openSettings(){setTimeout(gxUI,0);$("plist").innerHTML=db.partners.map((p,i)=>`<div style="display:flex;gap:8px;align-items:center;margin:4px 0"><span style="flex:1">${esc(p)}</span><button type="button" class="sec" data-p="${esc(p)}" onclick="pcOpen(this.dataset.p)">Καρτέλα</button><button type="button" class="del" onclick="rmPartner(${i})">Αφαίρεση</button></div>`).join("");$("sm").style.display="flex"}
-function addPartner(){const p=$("newp").value.trim();if(p&&!db.partners.includes(p)){db.partners.push(p);persist();fillSelects();render()}$("newp").value="";openSettings()}
-function rmPartner(i){if(confirm("Αφαίρεση από τη λίστα; (οι παλιές καταχωρήσεις μένουν)")){db.partners.splice(i,1);persist();fillSelects();render();openSettings()}}
+function openSettings(){$("smenu").style.display="flex"}
+function smView(v){$("pSec").style.display=v=="p"?"":"none";const g=$("gxBox");if(g)g.style.display=v=="g"?"":"none";$("sm").style.display="flex"}
+function openPartners(){smView("p");$("plist").innerHTML=db.partners.map((p,i)=>`<div style="display:flex;gap:8px;align-items:center;margin:4px 0"><span style="flex:1">${esc(p)}</span><button type="button" class="sec" data-p="${esc(p)}" onclick="closeM('sm');pcOpen(this.dataset.p)">Καρτέλα</button><button type="button" class="del" onclick="rmPartner(${i})">Αφαίρεση</button></div>`).join("");$("sm").style.display="flex"}
+function addPartner(){const p=$("newp").value.trim();if(p&&!db.partners.includes(p)){db.partners.push(p);persist();fillSelects();render()}$("newp").value="";openPartners()}
+function rmPartner(i){if(confirm("Αφαίρεση από τη λίστα; (οι παλιές καταχωρήσεις μένουν)")){db.partners.splice(i,1);persist();fillSelects();render();openPartners()}}
 function download(name,data,type){const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([data],{type}));a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},500)}
 function saveFile(){download("metavivaseis_"+today()+".json",JSON.stringify(db,null,2),"application/json")}
 function importFile(inp){const f=inp.files[0];if(!f)return;f.text().then(t=>{const d=JSON.parse(t);if(!mvValid(d))throw 0;
@@ -496,10 +516,19 @@ function exportCSV(){const H=["Ημερομηνία","Πινακίδα","Τύπ�
 const q=s=>'"'+String(s??"").replace(/"/g,'""')+'"';
 const rows=filtered().map(r=>[fdate(r.date),r.plate,r.type,r.job,r.partner,r.name,r.afm,r.addr,r.phone,String(r.bonus||"").replace(".",","),String(r.amount||"").replace(".",","),String(r.expenses||"").replace(".",","),r.expensesNote,r.status,r.notes].map(q).join(";"));
 download("metavivaseis_"+today()+".csv","\uFEFF"+[H.map(q).join(";")].concat(rows).join("\r\n"),"text/csv;charset=utf-8")}
-async function linkFile(){return;try{fh=await window.showSaveFilePicker({suggestedName:"metavivaseis.json",types:[{description:"JSON",accept:{"application/json":[".json"]}}]});
-await writeLinked();$("fstat").textContent="✔ Αυτόματη αποθήκευση στο: "+fh.name}catch(e){if(e.name!="AbortError")alert("Σφάλμα σύνδεσης αρχείου: "+e.message)}}
-async function writeLinked(){return;try{const w=await fh.createWritable();await w.write(JSON.stringify(db,null,2));await w.close()}catch(e){$("fstat").textContent="⚠ Αποτυχία αποθήκευσης στο αρχείο"}}
-document.addEventListener("keydown",e=>{if(e.key=="Escape"){closeM("fm");closeM("sm");closeM("rm");closeM("xm")}});
+async function linkFile(){try{if(!window.showSaveFilePicker)return alert("Ο browser δεν υποστηρίζει αυτόματη αποθήκευση σε φάκελο.");const h=await window.showSaveFilePicker({id:"metavivaseis-autosave",suggestedName:"metavivaseis_data.json",types:[{description:"JSON",accept:{"application/json":[".json"]}}]});
+fh=h;try{await idbSet("fh",h)}catch(e){}await writeLinked();asShow()}catch(e){if(e.name!="AbortError")alert("Σφάλμα σύνδεσης αρχείου: "+e.message)}}
+let fhQ=Promise.resolve();
+function asStat(t,perm){const s=$("fstat");if(!s)return;s.textContent=t;s.style.cursor=perm?"pointer":"";s.onclick=perm?asGrant:null;s.title=perm?"Πατήστε για να επιτραπεί η αυτόματη αποθήκευση":""}
+async function asGrant(){try{if(fh&&(await fh.requestPermission({mode:"readwrite"}))=="granted"){await writeLinked()}}catch(e){asStat("⚠ Αυτόματη αποθήκευση: "+(e.message||e),true)}}
+function asShow(){if(!fh){const s=$("fstat");if(!s)return;s.textContent="📁 Αυτόματη αποθήκευση: πατήστε για επιλογή φακέλου";s.style.cursor="pointer";s.onclick=linkFile}}
+function writeLinked(){const h=fh;if(!h)return Promise.resolve();fhQ=fhQ.then(async()=>{try{let p="granted";try{p=await h.queryPermission({mode:"readwrite"})}catch(e){}
+if(p!="granted"){asStat("🔒 Αυτόματη αποθήκευση: πατήστε εδώ για άδεια",true);return}
+const w=await h.createWritable();await w.write(JSON.stringify(db,null,2));await w.close();asStat("✔ Αυτόματη αποθήκευση "+h.name+" "+new Date().toLocaleTimeString("el-GR"),false)}
+catch(e){asStat("⚠ Αποτυχία αυτόματης αποθήκευσης – τα δεδομένα μένουν στον browser (πατήστε για νέα προσπάθεια)",true);console.warn(e)}});return fhQ}
+async function initLinked(){try{if(!window.indexedDB||!window.showSaveFilePicker)return;const h=await idbGet("fh");if(!h)return asShow();fh=h;asShow();let p="prompt";try{p=await h.queryPermission({mode:"readwrite"})}catch(e){}
+if(p=="granted")asStat("✔ Αυτόματη αποθήκευση: "+h.name,false);else asStat("🔒 Αυτόματη αποθήκευση: πατήστε εδώ για άδεια",true)}catch(e){console.warn("initLinked",e)}}
+document.addEventListener("keydown",e=>{if(e.key=="Escape"){closeM("fm");closeM("sm");closeM("rm");closeM("xm");closeM("smenu");closeM("bpm")}});
 const DRIVE=(()=>{const m=/^file:\/\/\/([A-Za-z]):/i.exec(location.href);return m&&m[1].toUpperCase()!="C"?m[1].toUpperCase():null})();
 const DATAF="metavivaseis_data.json",BAKF="metavivaseis_data.backup.json",JSF="metavivaseis_data.js";let pendH=null,asked=false;
 function idb(){return new Promise((ok,no)=>{const q=indexedDB.open("metavivaseis_fs",1);q.onupgradeneeded=()=>q.result.createObjectStore("h");q.onsuccess=()=>ok(q.result);q.onerror=()=>no(q.error)})}
@@ -525,7 +554,7 @@ let h=null;try{h=await idbGet("dir")}catch(e){}if(!h)return;
 let p="prompt";try{p=await h.queryPermission({mode:"readwrite"})}catch(e){}
 if(p=="granted")await connect(h)}
 
-load();if(window.showSaveFilePicker&&$("linkBtn"))$("linkBtn").style.display="";fillSelects();render();initUSB();
+load();if(window.showSaveFilePicker&&$("linkBtn"))$("linkBtn").style.display="";fillSelects();render();initUSB();initLinked();
 /* ===== OneDrive αποθήκευση (Microsoft Graph, φάκελος εφαρμογής /Apps/Metavivaseis) ===== */
 const CLIENT_ID="ΒΑΛΤΕ-ΕΔΩ-ΤΟ-APPLICATION-CLIENT-ID";   // ← από το Azure (βλ. ONEDRIVE_SETUP.txt)
 const OD_ON=/^[0-9a-f-]{36}$/i.test(CLIENT_ID)&&typeof msal!="undefined"&&location.protocol=="https:";
