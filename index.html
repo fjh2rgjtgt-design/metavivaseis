@@ -481,7 +481,7 @@ function bpRow(){const r=bpRange(),inR=d=>(!r.f||(d||"")>=r.f)&&(!r.t||(d||"")<=
 RP=db.records.filter(x=>inR(x.date)),GP=(db.generalExpenses||[]).filter(e=>inR(e.date)),S=(a,k)=>a.reduce((s,x)=>s+(+x[k]||0),0),
 B=S(RP,"bonus"),PA=S(RP,"amount"),EX=S(RP,"expenses"),BZ=S(gxBiz(GP),"amount"),PR=S(GP.filter(e=>e.category=="Προσωπικό"),"amount"),
 c=(t,v,col)=>`<span style="white-space:nowrap">${t}: <b style="color:${col||"#c62828"}">${eur(v)}</b></span>`;
-$("tot2").innerHTML=c("Παράβολα",PA,"#555")+c("Έξοδα γενικά",EX)+c("Επαγγελματικά έξοδα",BZ)+c("Καθαρό",B-EX-BZ,"#1f4e79")+c("Προσωπικά έξοδα",PR,"#777")}
+$("tot2").innerHTML=`<span style="white-space:nowrap">Καταχωρήσεις: <b>${RP.length}</b></span>`+c("Παράβολα",PA,"#555")+c("Έξοδα γενικά",EX)+c("Επαγγελματικά έξοδα",BZ)+c("Καθαρό",B-EX-BZ,"#1f4e79")+c("Προσωπικά έξοδα",PR,"#777")}
 function gxPersSum(){return gxPeriod().filter(e=>e.category=="Προσωπικό").reduce((a,e)=>a+(+e.amount||0),0)}
 function gxSum(L){return L.reduce((a,r)=>a+(+r.expenses||0),0)}
 function gxTotHtml(L){const b=L.reduce((a,r)=>a+(+r.bonus||0),0),e=gxSum(L),g=gxPeriodSum();
