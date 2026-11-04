@@ -521,17 +521,17 @@ function exportCSV(){const H=["Ημερομηνία","Πινακίδα","Τύπ�
 const q=s=>'"'+String(s??"").replace(/"/g,'""')+'"';
 const rows=filtered().map(r=>[fdate(r.date),r.plate,r.type,r.job,r.partner,r.name,r.afm,r.addr,r.phone,String(r.bonus||"").replace(".",","),String(r.amount||"").replace(".",","),String(r.expenses||"").replace(".",","),r.expensesNote,r.status,r.notes].map(q).join(";"));
 download("metavivaseis_"+today()+".csv","\uFEFF"+[H.map(q).join(";")].concat(rows).join("\r\n"),"text/csv;charset=utf-8")}
-async function linkFile(){try{if(!window.showSaveFilePicker)return alert("Ο browser δεν υποστηρίζει αυτόματη αποθήκευση σε φάκελο.");const h=await window.showSaveFilePicker({id:"metavivaseis-autosave",suggestedName:"metavivaseis_data.json",types:[{description:"JSON",accept:{"application/json":[".json"]}}]});
-fh=h;try{await idbSet("fh",h)}catch(e){}await writeLinked();asShow()}catch(e){if(e.name!="AbortError")alert("Σφάλμα σύνδεσης αρχείου: "+e.message)}}
+async function linkFile(){try{if(!window.showDirectoryPicker)return alert("Ο browser δεν υποστηρίζει αυτόματη αποθήκευση σε φάκελο.");const h=await window.showDirectoryPicker({id:"metavivaseis-autosave",mode:"readwrite"});
+fh=h;try{await idbSet("adir",h)}catch(e){}await writeLinked();asShow()}catch(e){if(e.name!="AbortError")alert("Σφάλμα σύνδεσης αρχείου: "+e.message)}}
 let fhQ=Promise.resolve();
 function asStat(t,perm){const s=$("fstat");if(!s)return;s.textContent=t;s.style.cursor=perm?"pointer":"";s.onclick=perm?asGrant:null;s.title=perm?"Πατήστε για να επιτραπεί η αυτόματη αποθήκευση":""}
 async function asGrant(){try{if(fh&&(await fh.requestPermission({mode:"readwrite"}))=="granted"){await writeLinked()}}catch(e){asStat("⚠ Αυτόματη αποθήκευση: "+(e.message||e),true)}}
 function asShow(){if(!fh){const s=$("fstat");if(!s)return;s.textContent="📁 Αυτόματη αποθήκευση: πατήστε για επιλογή φακέλου";s.style.cursor="pointer";s.onclick=linkFile}}
 function writeLinked(){const h=fh;if(!h)return Promise.resolve();fhQ=fhQ.then(async()=>{try{let p="granted";try{p=await h.queryPermission({mode:"readwrite"})}catch(e){}
 if(p!="granted"){asStat("🔒 Αυτόματη αποθήκευση: πατήστε εδώ για άδεια",true);return}
-const w=await h.createWritable();await w.write(JSON.stringify(db,null,2));await w.close();asStat("✔ Αυτόματη αποθήκευση "+h.name+" "+new Date().toLocaleTimeString("el-GR"),false)}
+const f=await h.getFileHandle(DATAF,{create:true}),w=await f.createWritable();await w.write(JSON.stringify(db,null,2));await w.close();asStat("✔ Αυτόματη αποθήκευση "+h.name+"\\"+DATAF+" "+new Date().toLocaleTimeString("el-GR"),false)}
 catch(e){asStat("⚠ Αποτυχία αυτόματης αποθήκευσης – τα δεδομένα μένουν στον browser (πατήστε για νέα προσπάθεια)",true);console.warn(e)}});return fhQ}
-async function initLinked(){try{if(!window.indexedDB||!window.showSaveFilePicker)return;const h=await idbGet("fh");if(!h)return asShow();fh=h;asShow();let p="prompt";try{p=await h.queryPermission({mode:"readwrite"})}catch(e){}
+async function initLinked(){try{if(!window.indexedDB||!window.showDirectoryPicker)return;const h=await idbGet("adir");if(!h)return asShow();fh=h;asShow();let p="prompt";try{p=await h.queryPermission({mode:"readwrite"})}catch(e){}
 if(p=="granted")asStat("✔ Αυτόματη αποθήκευση: "+h.name,false);else asStat("🔒 Αυτόματη αποθήκευση: πατήστε εδώ για άδεια",true)}catch(e){console.warn("initLinked",e)}}
 document.addEventListener("keydown",e=>{if(e.key=="Escape"){closeM("fm");closeM("sm");closeM("rm");closeM("xm");closeM("smenu");closeM("bpm")}});
 const DRIVE=(()=>{const m=/^file:\/\/\/([A-Za-z]):/i.exec(location.href);return m&&m[1].toUpperCase()!="C"?m[1].toUpperCase():null})();
