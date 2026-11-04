@@ -771,6 +771,7 @@ function apTick(){try{if(!db||!Array.isArray(db.appointments))return;var nowMs=D
 </script>
 <script>
 (function(){
+window.awWrite=function(){};return; /* v33: παλιά δεύτερη αυτόματη αποθήκευση απενεργοποιημένη – μία μόνο (metavivaseis_data.json) */
 var AWF="metavivaseis_web_data.json",FORBID=["metavivaseis_data.json","metavivaseis_data.js"],awH=null,awOn=false;
 if(FORBID.indexOf(AWF.toLowerCase())>=0)throw new Error("forbidden autosave name");
 function idb(){return new Promise(function(res,rej){var r=indexedDB.open("mv_autosave",1);r.onupgradeneeded=function(){r.result.createObjectStore("kv")};r.onsuccess=function(){res(r.result)};r.onerror=function(){rej(r.error)}})}
