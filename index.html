@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="el"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="theme-color" content="#1f4e79">
+<!DOCTYPE html><html lang="el"><head><meta charset="utf-8"><meta name="backup-version" content="2026.11.07.1"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="theme-color" content="#1f4e79">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon-192.png"><title>Μεταβιβάσεις Οχημάτων</title>
 <style>
 .pgnav{display:flex;flex-wrap:wrap;gap:4px;align-items:center;margin:8px 0}.pgnav button{padding:6px 10px;min-width:38px}#xm .card{max-width:min(1400px,98vw)}#xm table{width:100%}
@@ -296,6 +296,116 @@ const ao="|";function so(e){const{skus:t,libraryName:r,libraryVersion:n,extensio
 
 </script>
 <script>
+/* Backup format 2026.11.07.1. ES5: also embedded in the Windows HTA. */
+(function (root) {
+  'use strict';
+  var NAME = 'metavivaseis_backup_latest.json';
+  var STAGE = NAME + '.pending', PREVIOUS = NAME + '.previous';
+  function parse(text) {
+    var d = JSON.parse(String(text).replace(/^\uFEFF/, ''));
+    var sections = ['records', 'partners', 'generalExpenses', 'appointments', 'recurring', 'providers'];
+    if (!d || typeof d !== 'object' || Array.isArray(d)) throw new Error('Invalid backup object');
+    for (var i = 0; i < sections.length; i++) {
+      if (!Array.isArray(d[sections[i]])) throw new Error('Missing backup section: ' + sections[i]);
+    }
+    for (i = 0; i < d.records.length; i++) {
+      if (!d.records[i] || typeof d.records[i] !== 'object' || Array.isArray(d.records[i])) throw new Error('Invalid backup record');
+    }
+    if (!Object.prototype.hasOwnProperty.call(d, 'savedAt')) throw new Error('Missing savedAt');
+    return d;
+  }
+  function verify(actual, expected) {
+    var d = parse(actual);
+    if (expected !== undefined && JSON.stringify(d) !== JSON.stringify(parse(expected))) throw new Error('Backup readback mismatch');
+    return d;
+  }
+  function recover(io) {
+    // A crash between renames leaves PREVIOUS intact. Never discard it unless latest is valid.
+    if (io.exists(PREVIOUS)) {
+      verify(io.read(PREVIOUS));
+      var latestOK = false;
+      try { if (io.exists(NAME)) { verify(io.read(NAME)); latestOK = true; } } catch (_) {}
+      if (!latestOK) {
+        if (io.exists(NAME)) io.remove(NAME);
+        io.move(PREVIOUS, NAME);
+        verify(io.read(NAME));
+      } else io.remove(PREVIOUS);
+    }
+    if (io.exists(STAGE)) {
+      if (io.exists(NAME)) { verify(io.read(NAME)); io.remove(STAGE); }
+      else { verify(io.read(STAGE)); io.move(STAGE, NAME); verify(io.read(NAME)); }
+    }
+  }
+  function save(io, text) {
+    verify(text); // Never touch a previous backup for an incomplete input.
+    recover(io);
+    var hadPrevious = io.exists(NAME), old;
+    if (hadPrevious) { old = io.read(NAME); verify(old); }
+    try {
+      io.write(STAGE, text);
+      verify(io.read(STAGE), text);
+      if (hadPrevious) io.move(NAME, PREVIOUS);
+      io.move(STAGE, NAME);
+      verify(io.read(NAME), text);
+      if (io.exists(PREVIOUS)) io.remove(PREVIOUS);
+    } catch (error) {
+      // Restore only if the old name was moved. Keep recovery material if restoration itself fails.
+      try {
+        if (io.exists(PREVIOUS)) {
+          verify(io.read(PREVIOUS), old);
+          if (io.exists(NAME)) io.remove(NAME);
+          io.move(PREVIOUS, NAME);
+          verify(io.read(NAME), old);
+        }
+        if (io.exists(STAGE)) io.remove(STAGE);
+      } catch (restoreError) {
+        throw new Error(error.message + '; recovery required: ' + restoreError.message);
+      }
+      throw error;
+    }
+    return true;
+  }
+  var api = { name: NAME, parse: parse, verify: verify, recover: recover, save: save };
+  if (typeof module === 'object' && module.exports) module.exports = api;
+  else root.LatestBackup = api;
+}(this));
+/* Browser picked-file adapter. Browser writable streams replace atomically on close. */
+(function(root) {
+  'use strict';
+  async function save(handle, text) {
+    root.LatestBackup.verify(text);
+    var old = await (await handle.getFile()).text();
+    // Empty is a newly picked file. Refuse to replace unrelated/malformed content.
+    if (old) root.LatestBackup.verify(old);
+    var writer, committed = false;
+    try {
+      writer = await handle.createWritable();
+      await writer.write(text);
+      await writer.close();
+      committed = true;
+      root.LatestBackup.verify(await (await handle.getFile()).text(), text);
+    } catch (error) {
+      try {
+        if (writer && !committed && writer.abort) await writer.abort();
+        // Some providers can throw after committing close: always compare/read back.
+        var current = await (await handle.getFile()).text();
+        if (current !== old) {
+          var restore = await handle.createWritable();
+          await restore.write(old);
+          await restore.close();
+          if (await (await handle.getFile()).text() !== old) throw new Error('Restore mismatch');
+        }
+      } catch (restoreError) {
+        throw new Error(error.message + '; backup restoration failed: ' + restoreError.message);
+      }
+      throw error;
+    }
+  }
+  root.savePickedBackup = save;
+}(typeof globalThis === 'object' ? globalThis : this));
+
+</script>
+<script>
 const TYPES=["Επιβατικό","Δίκυκλο","Φορτηγό","Φορτηγό Δ.Χ.","Ρυμουλκούμενο/Τρέιλερ","Τρακτέρ"];
 const JOBS=["Μεταβίβαση", "Ταξινόμηση", "Άρση", "Κληρονομικό", "Υπεραξία", "Πινακίδες", "Άδεια οδικού", "Άδεια", "Αλλαγή χρώματος", "Φορτηγό", "Άλλο"];
 const JOBMAP={"ΜΕΤΑΒΙΒΑΣΗ": "Μεταβίβαση", "ΤΑΞΙΝΟΜΗΣΗ": "Ταξινόμηση", "ΑΡΣΗ": "Άρση", "ΚΛΗΡΟΝΟΜΙΚΟ": "Κληρονομικό", "ΥΠΕΡΑΞΙΑ": "Υπεραξία", "ΠΙΝΑΚΙΔΕΣ": "Πινακίδες", "ΑΔΕΙΑ ΟΔΙΚΟΥ": "Άδεια οδικού", "ΑΔΕΙΑ": "Άδεια", "ΧΡΩΜΑ": "Αλλαγή χρώματος", "ΦΟΡΤΗΓΟ": "Φορτηγό"};
@@ -516,7 +626,7 @@ function rmPartner(i){if(confirm("Αφαίρεση από τη λίστα; (οι
 function download(name,data,type){const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([data],{type}));a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},500)}
 function saveFile(){download("metavivaseis_"+today()+".json",JSON.stringify(db,null,2),"application/json")}
 function importFile(inp){const f=inp.files[0];if(!f)return;f.text().then(t=>{const d=JSON.parse(t);if(!mvValid(d))throw 0;
-const p=mvPlan(db,d);if(confirm(mvConfirmText(p))){mvSafety();mvApply(d,p);migrate();persist();fillSelects();render();alert(mvDoneText(p))}}).catch(()=>alert("Μη έγκυρο αρχείο."));inp.value=""}
+const p=mvPlan(db,d);if(confirm(mvConfirmText(p))){if(!mvSafety())throw new Error("Η εισαγωγή ακυρώθηκε: αποτυχία backup");mvApply(d,p);migrate();persist();fillSelects();render();alert(mvDoneText(p))}}).catch(()=>alert("Μη έγκυρο αρχείο."));inp.value=""}
 function exportCSV(){const H=["Ημερομηνία","Πινακίδα","Τύπος οχήματος","Τύπος εργασίας","Συνεργάτης","Αγοραστής","ΑΦΜ","Διεύθυνση","Τηλέφωνο","Bonus (€)","Ποσό για παράβολα (€)","Έξοδα (€)","Σημείωση εξόδων","Κατάσταση","Παρατηρήσεις"];
 const q=s=>'"'+String(s??"").replace(/"/g,'""')+'"';
 const rows=filtered().map(r=>[fdate(r.date),r.plate,r.type,r.job,r.partner,r.name,r.afm,r.addr,r.phone,String(r.bonus||"").replace(".",","),String(r.amount||"").replace(".",","),String(r.expenses||"").replace(".",","),r.expensesNote,r.status,r.notes].map(q).join(";"));
@@ -564,7 +674,7 @@ window.addEventListener("pageshow",()=>{if(fh)readLinked()});
 }catch(e){console.warn("initLinked",e);asShow()}}
 document.addEventListener("keydown",e=>{if(e.key=="Escape"){closeM("fm");closeM("sm");closeM("rm");closeM("xm");closeM("smenu");closeM("bpm")}});
 const DRIVE=(()=>{const m=/^file:\/\/\/([A-Za-z]):/i.exec(location.href);return m&&m[1].toUpperCase()!="C"?m[1].toUpperCase():null})();
-const DATAF="metavivaseis_data.json",BAKF="metavivaseis_data.backup.json",JSF="metavivaseis_data.js";let pendH=null,asked=false;
+const DATAF="metavivaseis_data.json",BAKF="metavivaseis_backup_latest.json",JSF="metavivaseis_data.js";let pendH=null,asked=false;
 function idb(){return new Promise((ok,no)=>{const q=indexedDB.open("metavivaseis_fs",1);q.onupgradeneeded=()=>q.result.createObjectStore("h");q.onsuccess=()=>ok(q.result);q.onerror=()=>no(q.error)})}
 async function idbGet(k){const d=await idb();return new Promise(ok=>{const q=d.transaction("h").objectStore("h").get(k);q.onsuccess=()=>ok(q.result);q.onerror=()=>ok(null)})}
 async function idbSet(k,v){try{const d=await idb();await new Promise(ok=>{const t=d.transaction("h","readwrite");t.objectStore("h").put(v,k);t.oncomplete=ok;t.onerror=ok})}catch(e){}}
@@ -645,15 +755,15 @@ odInit();
 
 </script><script>
 function bkMsg(t,ok){var d=document.createElement("div");d.textContent=t;d.style.cssText="position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:99999;padding:12px 18px;border-radius:10px;color:#fff;font-weight:700;max-width:90%;text-align:center;background:"+(ok?"#2e7d32":"#c62828");document.body.appendChild(d);setTimeout(function(){d.remove()},3500)}
-function bkName(){return "metavivaseis_backup_"+new Date().toISOString().slice(0,10)+".json"}
+function bkName(){return "metavivaseis_backup_latest.json"}
 function bkIOS(){return /iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1)}
-function bkDownload(txt,name){try{var blob=new Blob([txt||JSON.stringify(db,null,2)],{type:"application/json"}),u=URL.createObjectURL(blob);name=name||bkName();
+function bkDownload(txt,name){try{LatestBackup.verify(txt||JSON.stringify(db));var blob=new Blob([txt||JSON.stringify(db,null,2)],{type:"application/json"}),u=URL.createObjectURL(blob);name=name||bkName();
 var w=null;if(bkIOS())w=window.open(u,"_blank");
 if(!w){var a=document.createElement("a");a.href=u;a.download=name;a.rel="noopener";document.body.appendChild(a);a.click();a.remove()}
 setTimeout(function(){URL.revokeObjectURL(u)},60000);bkMsg("Η λήψη ξεκίνησε",1)}catch(e){bkMsg("Σφάλμα λήψης: "+(e.message||e),0)}}
 function bkMobile(){return bkIOS()||/Android|Mobi/i.test(navigator.userAgent)}
 function bkPick(name,txt){var pr;try{pr=window.showSaveFilePicker({id:"metavivaseis-backup",suggestedName:name,types:[{description:"JSON",accept:{"application/json":[".json"]}}]})}catch(e){bkPickErr(e,name,txt);return}
-Promise.resolve(pr).then(function(h){return h.createWritable().then(function(w){return w.write(new Blob([txt],{type:"application/json"})).then(function(){return w.close()})})}).then(function(){bkMsg("Αποθηκεύτηκε",1)},function(e){bkPickErr(e,name,txt)})}
+Promise.resolve(pr).then(function(h){return savePickedBackup(h,txt)}).then(function(){bkMsg("Αποθηκεύτηκε",1)},function(e){bkPickErr(e,name,txt)})}
 function bkPickErr(e,name,txt){if(e&&e.name==="AbortError")return;console.error("showSaveFilePicker error:",e);bkMsg("Σφάλμα παραθύρου αποθήκευσης: "+((e&&e.name)||"")+" "+((e&&e.message)||e)+" — γίνεται λήψη",0);bkDownload(txt,name)}
 function bkOdSend(){if(typeof OD_ON!="undefined"&&OD_ON&&odAcc){odPush();return}bkExport()}
 function bkSaveDl(){var name=bkName(),txt=JSON.stringify(db,null,2);if(window.showSaveFilePicker&&!bkMobile()){bkPick(name,txt);return}bkExport()}
@@ -662,7 +772,7 @@ try{if(typeof File==="function"&&navigator.canShare&&navigator.share){var f1=new
 if(navigator.canShare({files:[f1]}))file=f1;else{var f2=new File([txt],name,{type:"text/plain"});if(navigator.canShare({files:[f2]}))file=f2}}}catch(e){file=null}
 if(file){var pr;try{pr=navigator.share({files:[file]})}catch(e){if(e&&e.name==="AbortError")return;bkDownload(txt,name);return}
 Promise.resolve(pr).then(function(){bkMsg("Η εξαγωγή ολοκληρώθηκε",1)},function(e){if(e&&e.name==="AbortError")return;bkDownload(txt,name)});return}
-if(window.showSaveFilePicker){showSaveFilePicker({id:"metavivaseis-backup",suggestedName:name,types:[{description:"JSON",accept:{"application/json":[".json"]}}]}).then(function(h){return h.createWritable().then(function(w){return w.write(new Blob([txt],{type:"application/json"})).then(function(){return w.close()})})}).then(function(){bkMsg("Η εξαγωγή ολοκληρώθηκε",1)},function(e){if(e&&e.name==="AbortError")return;bkDownload(txt,name)});return}
+if(window.showSaveFilePicker){showSaveFilePicker({id:"metavivaseis-backup",suggestedName:name,types:[{description:"JSON",accept:{"application/json":[".json"]}}]}).then(function(h){return savePickedBackup(h,txt)}).then(function(){bkMsg("Η εξαγωγή ολοκληρώθηκε",1)},function(e){if(e&&e.name==="AbortError")return;bkDownload(txt,name)});return}
 bkDownload(txt,name)}
 async function bkImport(){if(window.showOpenFilePicker){try{var hs=await showOpenFilePicker({types:[{description:"JSON",accept:{"application/json":[".json"]}}]});bkRead(await hs[0].getFile())}catch(e){if(e&&e.name!=="AbortError")bkMsg("Σφάλμα εισαγωγής: "+(e.message||e),0)}return}
 document.getElementById("bkFile").click()}
@@ -673,7 +783,7 @@ for(i=0;i<inc.records.length;i++){r=inc.records[i];m=null;
 if(r.id!=null&&r.id!==""&&byId[String(r.id)])m=byId[String(r.id)];else if(r.id==null||r.id===""){m=byKey[mvKey(r)]||null}
 if(m){upd++;ops.push({t:"u",r:r,m:m})}else{add++;ops.push({t:"a",r:r})}}
 return {add:add,upd:upd,ops:ops,ids:ids,ap:typeof apPlan=="function"?apPlan(cur,inc):null}}
-function mvSafety(){var s=JSON.stringify({savedAt:new Date().toISOString(),db:db});try{localStorage.setItem("metavivaseis_prev_backup",s);return true}catch(e){return false}}
+function mvSafety(){try{var s=JSON.stringify(db);LatestBackup.verify(s);var old=localStorage.getItem(LatestBackup.name);try{localStorage.setItem(LatestBackup.name,s);LatestBackup.verify(localStorage.getItem(LatestBackup.name),s)}catch(e){if(old!==null)localStorage.setItem(LatestBackup.name,old);else localStorage.removeItem(LatestBackup.name);throw e}return true}catch(e){bkMsg("Αποτυχία backup: "+e.message,0);return false}}
 function mvApply(inc,p){var i,o,k,nid;
 for(i=0;i<p.ops.length;i++){o=p.ops[i];
 if(o.t=="u"){for(k in o.r)if(Object.prototype.hasOwnProperty.call(o.r,k)&&k!="id")o.m[k]=o.r[k]}
@@ -692,7 +802,7 @@ bkTextOf(f).then(function(t){if(!t||!t.replace(/[\s\u0000\uFEFF]/g,"")){var e=ne
 var d;try{d=bkParse(t)}catch(e){e.message=(e.message||"")+" | διαβάστηκαν "+t.length+" χαρ., αρχή: «"+t.slice(0,40).replace(/\s+/g," ")+"»";throw e}
 if(!mvValid(d))throw new Error("Το αρχείο δεν είναι αντίγραφο της εφαρμογής | αρχή: «"+t.slice(0,40).replace(/\s+/g," ")+"»");
 var p=mvPlan(db,d);if(!confirm(mvConfirmText(p))){cb&&cb(null);return}
-mvSafety();mvApply(d,p);migrate();persist();try{fillSelects()}catch(e){}render();bkMsg(mvDoneText(p),1);cb&&cb(p)})
+if(!mvSafety())throw new Error("Η εισαγωγή ακυρώθηκε: αποτυχία backup");mvApply(d,p);migrate();persist();try{fillSelects()}catch(e){}render();bkMsg(mvDoneText(p),1);cb&&cb(p)})
 .catch(function(e){console.error("import error",e,info);bkMsg(e&&e.mvEmpty?e.message:"Σφάλμα εισαγωγής: "+((e&&e.name)||"")+" "+((e&&e.message)||e)+info,0);cb&&cb(null)})}
 function bkRead(f){bkReadFile(f)}
 var bkSyncMode=false;
@@ -846,7 +956,7 @@ function banner(show){var b=el("aiBan");if(!show){if(b)b.remove();return}if(b)re
  b.style.cssText="position:fixed;left:10px;bottom:10px;z-index:9998;font-size:13px;padding:6px 12px;border-radius:14px;box-shadow:0 1px 4px rgba(0,0,0,.2)";
  b.onclick=function(){var p;try{p=aiH.requestPermission({mode:"read"})}catch(e){return}Promise.resolve(p).then(function(s){if(s=="granted"){banner(false);scan()}},function(){})};document.body.appendChild(b)}
 function applyOne(d){var g0=(db.generalExpenses||[]).length,a0=(db.appointments||[]).length,r0=db.records.length;
- var p=mvPlan(db,d);mvSafety();mvApply(d,p);migrate();persist();
+ var p=mvPlan(db,d);if(!mvSafety())throw new Error("Η εισαγωγή ακυρώθηκε: αποτυχία backup");mvApply(d,p);migrate();persist();
  return {gx:(db.generalExpenses||[]).length-g0,ap:(db.appointments||[]).length-a0,rec:db.records.length-r0}}
 function scan(){if(!aiH||busy||typeof db=="undefined"||!db)return Promise.resolve();busy=true;
  return Promise.resolve(aiH.queryPermission?aiH.queryPermission({mode:"read"}):"granted").then(function(p){if(p!="granted"){banner(true);return}banner(false);

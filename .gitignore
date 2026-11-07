@@ -1,0 +1,4 @@
+# Private HTA input/output contains legacy customer seed data.
+*.hta
+*.json.bak*
+node_modules/
