@@ -938,4 +938,20 @@ var oB=openBills;openBills=function(){var r=oB.apply(this,arguments);if(!(histor
 var oC=closeM;closeM=function(m){var r=oC.apply(this,arguments);if(m=="xm"&&!window.__xmPop&&history.state&&history.state.xmOpen&&$("xm").style.display=="none"){try{history.back()}catch(e){}}return r};
 window.addEventListener("popstate",function(){if($("xm").style.display&&$("xm").style.display!="none"){window.__xmPop=1;try{closeM("xm")}finally{window.__xmPop=0}}})})();
 </script>
+<script>
+(function(){
+  function bindBackdropClose(id){
+    var el=$(id);
+    if(!el)return;
+    var down=false;
+    el.addEventListener("mousedown",function(e){down=e.target===el&&e.button===0});
+    el.addEventListener("click",function(e){
+      if(down&&e.target===el)closeM(id);
+      down=false;
+    });
+  }
+  bindBackdropClose("ccm");
+  bindBackdropClose("pcm");
+})();
+</script>
 </body></html>
