@@ -96,14 +96,14 @@ body.pdoc>*{display:none!important}body.pdoc>#printDoc{display:block!important}
 #printDoc{font-family:Arial,sans-serif;font-size:10.5pt;color:#000}#printDoc table{width:100%;border-collapse:collapse;display:table!important}#printDoc th,#printDoc td{display:table-cell!important;border:1px solid #999;padding:3px 5px;text-align:left;font-size:9.5pt}#printDoc tr{display:table-row!important}#printDoc thead{display:table-header-group!important}#printDoc tbody{display:table-row-group!important}#printDoc .ph{border-bottom:2px solid #000;margin-bottom:10px;padding-bottom:6px}#printDoc h2{font-size:14pt;margin:8px 0}#printDoc .kv td:first-child{width:35%;font-weight:bold}
 }
 </style></head><body>
-<header><h1>🚗 Μεταβιβάσεις Οχημάτων <small id="appVer" style="font-size:11px;font-weight:400;opacity:.6">v38</small></h1>
+<header><h1>🚗 Μεταβιβάσεις Οχημάτων <small id="appVer" style="font-size:11px;font-weight:400;opacity:.6">v39</small></h1>
 <button type="button" class="sec" id="menuBtn" onclick="this.parentNode.classList.toggle('open')">☰ Μενού</button>
 <div id="mbar"><input id="mq" type="search" placeholder="Αναζήτηση..." oninput="$('q').value=this.value;render()"><button type="button" class="sec" id="progBtnM" onclick="toggleInProgress()">Σε εξέλιξη</button><button type="button" class="sec" onclick="ccOpenSearch()">Πελάτες</button><button type="button" class="sec" onclick="document.body.classList.toggle('showf')">Φίλτρα</button><button type="button" class="ok" onclick="openForm()">+ Νέα</button></div>
 <button type="button" class="hx ok" onclick="openForm()">+ Νέα καταχώρηση</button>
 <button type="button" class="hx sec" onclick="exportCSV()">Εξαγωγή Excel</button>
 <button type="button" class="hx sec" id="oldDelBtn" onclick="oldDelOpen()">Διαγραφή</button>
 <button type="button" class="hx sec" id="bkImp" onclick="bkImport()">Εισαγωγή</button>
-<button type="button" class="hx ok" id="bkSnap" onclick="mvBackupNow()" title="Αποθηκεύει ό,τι βλέπετε τώρα σε ΝΕΟ αρχείο metavivaseis_data_backup_… (δεν αγγίζει το metavivaseis_data.json)">Αντίγραφο ασφαλείας</button>
+<button type="button" class="hx ok" id="bkSnap" onclick="if(typeof mvBackupNow==='function'){try{mvBackupNow()}catch(e){alert('Σφάλμα αντιγράφου ασφαλείας: '+(e&&e.message||e))}}else alert('Το αντίγραφο ασφαλείας δεν φορτώθηκε — πατήστε Ctrl+F5 και ξαναδοκιμάστε.')" title="Αποθηκεύει ό,τι βλέπετε τώρα σε ΝΕΟ αρχείο metavivaseis_data_backup_… (δεν αγγίζει το metavivaseis_data.json)">Αντίγραφο ασφαλείας</button>
 <input type="file" id="bkFile" accept=".json,application/json,text/plain,*/*" style="display:none" onchange="var inp=this,f=inp.files&&inp.files[0],done=function(){setTimeout(function(){inp.value=''},0)};if(bkSyncMode){bkSyncMode=false;bkReadFile(f,function(p){done();bkSyncAfter(p)})}else bkReadFile(f,done)">
 <button type="button" class="hx sec" id="progBtn" onclick="toggleInProgress()">Σε εξέλιξη</button>
 <button type="button" class="hx" onclick="openReport()">Ανά συνεργάτη</button>
@@ -1292,20 +1292,41 @@ window.addEventListener("focus",function(){setTimeout(onBack,400)});
 /* Αντίγραφο ασφαλείας: νέο αρχείο, ποτέ το metavivaseis_data.json */
 function bkFileName(){var d=new Date();return "metavivaseis_data_backup_"+d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate())+"_"+pad(d.getHours())+"-"+pad(d.getMinutes())+".json"}
 function say(t,ok){if(typeof bkMsg==="function")bkMsg(t,ok?1:0);else alert(t)}
-window.mvBackupNow=async function(){try{
- var txt=JSON.stringify(db,null,2),n=(db&&db.records&&db.records.length)||0,name=bkFileName();
- if(/^metavivaseis_data\.(json|js)$/i.test(name))throw new Error("μη επιτρεπτό όνομα");
- if(typeof fh!="undefined"&&fh&&(await perm(fh,true))=="granted"){
-  var nm=name,i=2;while(true){try{await fh.getFileHandle(nm);nm=name.replace(/\.json$/,"_"+(i++)+".json")}catch(e){break}}
-  var h=await fh.getFileHandle(nm,{create:true}),w=await h.createWritable();await w.write(txt);await w.close();
-  var back=JSON.parse(await (await h.getFile()).text());if(!back||!Array.isArray(back.records)||back.records.length!==n)throw new Error("η επαλήθευση απέτυχε");
-  say("✔ Αντίγραφο ασφαλείας: "+fh.name+"\\"+nm+" — "+n+" εγγραφές",1);return nm}
- if(typeof bkDownload==="function")bkDownload(txt,name);else{var a=document.createElement("a");a.href=URL.createObjectURL(new Blob([txt],{type:"application/json"}));a.download=name;document.body.appendChild(a);a.click();setTimeout(function(){a.remove()},500)}
- say("✔ Αντίγραφο ασφαλείας (λήψη): "+name+" — "+n+" εγγραφές",1);return name}
- catch(e){say("⚠ Αποτυχία αντιγράφου ασφαλείας: "+((e&&e.message)||e),0);return null}};
+/* v39: Αντίγραφο ασφαλείας — λήψη αμέσως μέσα στο κλικ, εγγραφή στον φάκελο μόνο αν υπάρχει ήδη άδεια */
+var permCache="none";
+function refreshPerm(){if(typeof fh=="undefined"||!fh){permCache="none";return}perm(fh,false).then(function(p){permCache=p}).catch(function(){permCache="prompt"})}
+setTimeout(refreshPerm,800);setInterval(refreshPerm,5000);window.addEventListener("focus",refreshPerm);document.addEventListener("visibilitychange",refreshPerm);
+function toast(t,ok){var d=g("mvBkToast");if(!d){d=document.createElement("div");d.id="mvBkToast";d.setAttribute("role","status");document.body.appendChild(d);d.onclick=function(){d.style.display="none"}}
+ d.style.cssText="position:fixed;left:50%;top:70px;transform:translateX(-50%);z-index:100010;padding:14px 20px;border-radius:12px;color:#fff;font-size:17px;font-weight:700;max-width:92vw;text-align:center;box-shadow:0 4px 16px rgba(0,0,0,.3);cursor:pointer;background:"+(ok?"#2e7d32":"#c62828");
+ d.textContent=t+"  ✕";d.style.display="block";clearTimeout(d._t);d._t=setTimeout(function(){d.style.display="none"},12000)}
+function dlNow(txt,name){var u=null;try{var blob=new Blob([txt],{type:"application/json"});u=URL.createObjectURL(blob);var a=document.createElement("a");a.href=u;a.download=name;a.rel="noopener";a.style.display="none";document.body.appendChild(a);a.click();setTimeout(function(){a.remove();URL.revokeObjectURL(u)},60000);return true}
+ catch(e){try{if(u)window.open(u,"_blank");return true}catch(e2){}return false}}
+function snapTxt(){var t;try{t=JSON.stringify(db,null,2)}catch(e){t=null}if(!t){try{t=localStorage.getItem(KEY)}catch(e){}}return t||"{}"}
+function cnt(){try{return (db&&db.records&&db.records.length)||0}catch(e){return 0}}
+function safeName(n){return /^metavivaseis_data\.(json|js)$/i.test(n)?n.replace(/\.json$|\.js$/i,"")+"_backup.json":n}
+window.mvBackupNow=function(){var name="metavivaseis_data_backup.json",txt="{}",n=0;
+ try{name=safeName(bkFileName());txt=snapTxt();n=cnt();
+  var h=(typeof fh!="undefined")?fh:null;
+  if(!h||permCache!="granted"){var ok=dlNow(txt,name);
+   toast(ok?"✔ Αντίγραφο ασφαλείας: "+name+" — "+n+" εγγραφές (στις Λήψεις / Downloads)":"⚠ Η λήψη του αντιγράφου απέτυχε",ok);return ok?name:null}
+  (async function(){try{var nm=name,i=2;while(true){try{await h.getFileHandle(nm);nm=name.replace(/\.json$/,"_"+(i++)+".json")}catch(e){break}}
+    if(/^metavivaseis_data\.(json|js)$/i.test(nm))throw new Error("μη επιτρεπτό όνομα");
+    var fhd=await h.getFileHandle(nm,{create:true}),w=await fhd.createWritable();await w.write(txt);await w.close();
+    var back=JSON.parse(await (await fhd.getFile()).text());if(!back||!Array.isArray(back.records)||back.records.length!==n)throw new Error("η επαλήθευση απέτυχε");
+    toast("✔ Αντίγραφο ασφαλείας: "+(h.name||"Metavivaseis")+"\\"+nm+" — "+n+" εγγραφές",1)}
+   catch(e){console.warn("v39 backup folder",e);var ok2=dlNow(txt,name);
+    toast("⚠ Δεν γράφτηκε στον φάκελο ("+((e&&e.message)||e)+")"+(ok2?" — έγινε λήψη: "+name+" — "+n+" εγγραφές (Λήψεις / Downloads)":" και η λήψη απέτυχε"),ok2)}})();
+  return name}
+ catch(e){console.warn("v39 backup",e);var ok3=dlNow(txt,name);toast("⚠ Σφάλμα αντιγράφου ("+((e&&e.message)||e)+")"+(ok3?" — έγινε λήψη: "+name+" — "+n+" εγγραφές":""),ok3);return ok3?name:null}};
+
 if(isDirty())setTimeout(function(){if(typeof fh=="undefined"||!fh){warn(true);return}perm(fh,false).then(function(p){if(p!="granted")warn(true);else if(typeof writeLinked==="function")writeLinked()})},2500);
 setTimeout(function(){if(typeof fh!="undefined"&&fh&&!busy&&lastMod===+(localStorage.getItem(LASTM)||0))autoLoad("start")},3000);
-window.mvV38={pickNewest:pickNewest,isCandidateName:isCandidateName,isFullDb:isFullDb,autoLoad:autoLoad,saved:saved,unsaved:unsaved,isDirty:isDirty,backupName:bkFileName,grant:grantAndLoad};
+/* v39: οι κόκκινες ειδοποιήσεις δεν σκεπάζουν πια τα κουμπιά (η σελίδα μετακινείται κάτω/πάνω) */
+function layoutBans(){try{var t=g("mvSyncBan"),bt=g("mvUnsavedBan"),th=(t&&t.style.display!="none")?t.offsetHeight:0,bh=(bt&&bt.style.display!="none")?bt.offsetHeight:0;
+ document.body.style.paddingTop=th?th+"px":"";document.body.style.paddingBottom=bh?bh+"px":"";var hd=document.querySelector("header");if(hd)hd.style.top=th?th+"px":"";
+ var ts=g("mvBkToast");if(ts)ts.style.top=(th+70)+"px"}catch(e){}}
+setInterval(layoutBans,700);window.addEventListener("resize",layoutBans);
+window.mvV38={permState:function(){return permCache},refreshPerm:refreshPerm,pickNewest:pickNewest,isCandidateName:isCandidateName,isFullDb:isFullDb,autoLoad:autoLoad,saved:saved,unsaved:unsaved,isDirty:isDirty,backupName:bkFileName,grant:grantAndLoad};
 })();
 </script>
 </body></html>
