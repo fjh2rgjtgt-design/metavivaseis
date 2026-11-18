@@ -96,7 +96,7 @@ body.pdoc>*{display:none!important}body.pdoc>#printDoc{display:block!important}
 #printDoc{font-family:Arial,sans-serif;font-size:10.5pt;color:#000}#printDoc table{width:100%;border-collapse:collapse;display:table!important}#printDoc th,#printDoc td{display:table-cell!important;border:1px solid #999;padding:3px 5px;text-align:left;font-size:9.5pt}#printDoc tr{display:table-row!important}#printDoc thead{display:table-header-group!important}#printDoc tbody{display:table-row-group!important}#printDoc .ph{border-bottom:2px solid #000;margin-bottom:10px;padding-bottom:6px}#printDoc h2{font-size:14pt;margin:8px 0}#printDoc .kv td:first-child{width:35%;font-weight:bold}
 }
 </style></head><body>
-<header><h1>🚗 Μεταβιβάσεις Οχημάτων <small id="appVer" style="font-size:11px;font-weight:400;opacity:.6">v35</small></h1>
+<header><h1>🚗 Μεταβιβάσεις Οχημάτων <small id="appVer" style="font-size:11px;font-weight:400;opacity:.6">v36</small></h1>
 <button type="button" class="sec" id="menuBtn" onclick="this.parentNode.classList.toggle('open')">☰ Μενού</button>
 <div id="mbar"><input id="mq" type="search" placeholder="Αναζήτηση..." oninput="$('q').value=this.value;render()"><button type="button" class="sec" id="progBtnM" onclick="toggleInProgress()">Σε εξέλιξη</button><button type="button" class="sec" onclick="ccOpenSearch()">Πελάτες</button><button type="button" class="sec" onclick="document.body.classList.toggle('showf')">Φίλτρα</button><button type="button" class="ok" onclick="openForm()">+ Νέα</button></div>
 <button type="button" class="hx ok" onclick="openForm()">+ Νέα καταχώρηση</button>
@@ -527,13 +527,14 @@ const ok=await readLinked();
 if(!ok)await writeLinked();
 asShow();
 if(ok)asStat("✔ Φόρτωση από "+h.name+"\\"+DATAF+" ("+((db.records&&db.records.length)||0)+" εγγραφές)",false);
+if(window.mvAfterFolderReady)await window.mvAfterFolderReady();
 }catch(e){if(e.name!="AbortError")alert("Σφάλμα σύνδεσης αρχείου: "+e.message)}}
 let fhQ=Promise.resolve();
 function asStat(t,perm){const s=$("fstat");if(!s)return;s.textContent=t;s.style.cursor=perm?"pointer":"";s.onclick=perm?asGrant:null;s.title=perm?"Πατήστε για να επιτραπεί η φόρτωση και η αυτόματη αποθήκευση":""}
-async function asGrant(){try{if(fh&&(await fh.requestPermission({mode:"readwrite"}))=="granted"){const ok=await readLinked();if(!ok)await writeLinked();else asStat("✔ Φόρτωση από "+fh.name+"\\"+DATAF+" ("+((db.records&&db.records.length)||0)+" εγγραφές)",false)}}catch(e){asStat("⚠ Αυτόματη αποθήκευση: "+(e.message||e),true)}}
+async function asGrant(){try{if(fh&&(await fh.requestPermission({mode:"readwrite"}))=="granted"){const ok=await readLinked();if(!ok)await writeLinked();else asStat("✔ Φόρτωση από "+fh.name+"\\"+DATAF+" ("+((db.records&&db.records.length)||0)+" εγγραφές)",false);if(window.mvAfterFolderReady)await window.mvAfterFolderReady()}}catch(e){asStat("⚠ Αυτόματη αποθήκευση: "+(e.message||e),true)}}
 function asShow(){if(!fh){const s=$("fstat");if(!s)return;s.textContent="📁 Αυτόματη αποθήκευση: πατήστε για επιλογή φακέλου (φορτώνει το metavivaseis_data.json)";s.style.cursor="pointer";s.onclick=linkFile}}
 function applyLinkedDb(d){if(!d||!Array.isArray(d.records))return false;db=d;if(!db.partners)db.partners=DEFP.slice();migrate();gxRun();try{localStorage.setItem(KEY,JSON.stringify(db))}catch(e){}fillSelects();render();return true}
-function writeLinked(){const h=fh;if(!h)return Promise.resolve();fhQ=fhQ.then(async()=>{try{let p="granted";try{p=await h.queryPermission({mode:"readwrite"})}catch(e){}
+function writeLinked(){const h=fh;if(!h)return Promise.resolve();fhQ=fhQ.then(async()=>{if(typeof window.mvWriteLinkedDo==="function")return window.mvWriteLinkedDo(h);try{let p="granted";try{p=await h.queryPermission({mode:"readwrite"})}catch(e){}
 if(p!="granted"){asStat("🔒 Αυτόματη αποθήκευση: πατήστε εδώ για άδεια",true);return}
 const f=await h.getFileHandle(DATAF,{create:true}),w=await f.createWritable();await w.write(JSON.stringify(db,null,2));await w.close();asStat("✔ Αυτόματη αποθήκευση "+h.name+"\\"+DATAF+" "+new Date().toLocaleTimeString("el-GR"),false)}
 catch(e){asStat("⚠ Αποτυχία αυτόματης αποθήκευσης – τα δεδομένα μένουν στον browser (πατήστε για νέα προσπάθεια)",true);console.warn(e)}});return fhQ}
@@ -547,7 +548,7 @@ if(!f){await sleep(250);continue}
 const file=await f.getFile();const text=await file.text();
 if(!text||!String(text).trim()){await sleep(250);continue}
 const d=JSON.parse(text);
-if(applyLinkedDb(d)){asStat("✔ Φόρτωση από "+h.name+"\\"+DATAF+" ("+d.records.length+" εγγραφές)",false);return true}
+if((typeof applyDiskDb==="function"?applyDiskDb:applyLinkedDb)(d)){asStat("✔ Φόρτωση από "+h.name+"\\"+DATAF+" ("+d.records.length+" εγγραφές)",false);return true}
 }catch(e){lastErr=e;console.warn("readLinked try",i+1,e);await sleep(250)}}
 if(lastErr)console.warn("readLinked failed",lastErr);return false}
 async function tryFetchDataJson(){const urls=["./metavivaseis_data.json","metavivaseis_data.json"];
@@ -557,10 +558,10 @@ async function initLinked(){try{const fetched=await tryFetchDataJson();
 if(!window.indexedDB||!window.showDirectoryPicker){if(!fetched)asShow();return}
 const h=await idbGet("adir");if(!h){asShow();return}
 fh=h;asShow();let p="prompt";try{p=await h.queryPermission({mode:"readwrite"})}catch(e){}
-if(p=="granted"){asStat("✔ Αυτόματη αποθήκευση: "+h.name,false);await readLinked()}
+if(p=="granted"){asStat("✔ Αυτόματη αποθήκευση: "+h.name,false);await readLinked();if(window.mvAfterFolderReady)await window.mvAfterFolderReady()}
 else asStat("🔒 Πατήστε εδώ για άδεια — φορτώνει το metavivaseis_data.json από "+h.name,true);
-document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&fh)readLinked()});
-window.addEventListener("pageshow",()=>{if(fh)readLinked()});
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&fh)readLinked().then(function(){if(window.mvAfterFolderReady)return window.mvAfterFolderReady()})});
+window.addEventListener("pageshow",()=>{if(fh)readLinked().then(function(){if(window.mvAfterFolderReady)return window.mvAfterFolderReady()})});
 }catch(e){console.warn("initLinked",e);asShow()}}
 document.addEventListener("keydown",e=>{if(e.key=="Escape"){closeM("fm");closeM("sm");closeM("rm");closeM("xm");closeM("smenu");closeM("bpm")}});
 const DRIVE=(()=>{const m=/^file:\/\/\/([A-Za-z]):/i.exec(location.href);return m&&m[1].toUpperCase()!="C"?m[1].toUpperCase():null})();
@@ -834,43 +835,251 @@ kv("get","dir").then(function(h){if(h){awH=h;awOn=true;ui();return Promise.resol
 })();
 </script>
 <script>
-/* ===== Αυτόματη εισαγωγή eisagogi_*.json από φάκελο (File System Access) ===== */
+/* ===== v36: ασφαλής εγγραφή φακέλου, αυτόματη εισαγωγή eisagogi_*.json, ημερήσια αντίγραφα ===== */
 (function(){
-var aiH=null,busy=false,LS="mv_autoimport_done",RE=/^eisagogi_.*\.json$/i;
 function el(id){return document.getElementById(id)}
-function idb(){return new Promise(function(res,rej){var r=indexedDB.open("mv_autosave",1);r.onupgradeneeded=function(){r.result.createObjectStore("kv")};r.onsuccess=function(){res(r.result)};r.onerror=function(){rej(r.error)}})}
-function kv(op,k,v){return idb().then(function(d){return new Promise(function(res,rej){var t=d.transaction("kv",op=="get"?"readonly":"readwrite"),s=t.objectStore("kv"),q=op=="get"?s.get(k):op=="del"?s.delete(k):s.put(v,k);q.onsuccess=function(){res(q.result)};q.onerror=function(){rej(q.error)}})})}
-function done(){try{return JSON.parse(localStorage.getItem(LS)||"{}")||{}}catch(e){return {}}}
-function ui(){var n=el("aiName");if(n)n.textContent=aiH?("Φάκελος: "+aiH.name):"Δεν έχει συνδεθεί φάκελος";var o=el("aiOff");if(o)o.style.display=aiH?"":"none"}
-function banner(show){var b=el("aiBan");if(!show){if(b)b.remove();return}if(b)return;b=document.createElement("button");b.type="button";b.id="aiBan";b.className="ok";b.textContent="Ενεργοποίηση αυτόματης εισαγωγής";
+function todayAthens(){try{return new Date().toLocaleDateString("en-CA",{timeZone:"Europe/Athens"})}catch(e){return new Date().toISOString().slice(0,10)}}
+function isoNow(){try{return new Date().toLocaleString("sv-SE",{timeZone:"Europe/Athens"}).replace(" ","T")+"+02:00"}catch(e){return new Date().toISOString()}}
+function modalOpen(){var ids=["fm","rm","sm","xm","rentm","apm","smenu","bpm","ccm","pcm","oldm"];for(var i=0;i<ids.length;i++){var e=typeof $==="function"?$(ids[i]):el(ids[i]);if(e&&e.style.display&&e.style.display!="none")return true}return false}
+function normPlate(s){return String(s||"").replace(/\s+/g,"").toUpperCase()}
+function normAfm(s){return String(s||"").replace(/\D/g,"")}
+function normName(s){if(typeof ccNorm==="function")return ccNorm(s);return String(s||"").toUpperCase().replace(/[^A-Z0-9Α-Ω]+/g," ").trim()}
+function chassisList(r){var out=[],seen={};function add(v){v=String(v||"").toUpperCase().replace(/[^A-Z0-9]/g,"");if(v.length>=8&&!seen[v]){seen[v]=1;out.push(v)}}
+ if(r&&(r.chassis||r.vin||r.frame||r.plaisio))add(r.chassis||r.vin||r.frame||r.plaisio);
+ var s=String((r&&(r.chassis||r.vin||r.frame||r.plaisio))||"")+" "+String((r&&r.notes)||"");
+ var re=/(?:πλα[ιί]σιο|VIN)\s*[:.\u2013-–]?\s*([A-HJ-NPR-Z0-9]{8,20})/gi,m;
+ while((m=re.exec(s)))add(m[1]);
+ re=/\b([A-HJ-NPR-Z0-9]{17})\b/gi;
+ while((m=re.exec(s)))add(m[1]);
+ return out}
+function recLabel(r){var p=normPlate(r&&r.plate);return (r&&r.name?String(r.name):"")+(p?" ("+p+")":" (χωρίς πινακίδα)")}
+function hasCommon(a,b){if(!a||!b||!a.length||!b.length)return false;for(var i=0;i<a.length;i++)if(b.indexOf(a[i])>=0)return true;return false}
+function autoRecDup(list,inc){if(!inc||!list)return null;
+ var id=inc.id!=null&&inc.id!==""?String(inc.id):"";
+ var plate=normPlate(inc.plate),afm=normAfm(inc.afm),name=normName(inc.name),chs=chassisList(inc),date=inc.date||"",job=inc.job||"";
+ for(var i=0;i<list.length;i++){var r=list[i];if(!r)continue;
+  if(id&&String(r.id)===id)return r;
+  var p2=normPlate(r.plate),a2=normAfm(r.afm),n2=normName(r.name),c2=chassisList(r),d2=r.date||"",j2=r.job||"";
+  var ch=hasCommon(chs,c2);
+  if(ch&&date&&d2&&date===d2)return r;
+  if(plate&&p2&&plate===p2&&date&&d2&&date===d2&&(!job||!j2||job===j2))return r;
+  if(afm&&a2&&afm===a2&&name&&n2&&name===n2&&date&&d2&&date===d2)return r;
+  if(afm&&a2&&afm===a2&&name&&n2&&name===n2&&plate&&p2&&plate===p2&&(!date||!d2||date===d2))return r;
+  if(name&&n2&&name===n2&&plate&&p2&&plate===p2&&date&&d2&&date===d2)return r}
+ return null}
+function rfNorm(s){return String(s||"").replace(/\s+/g,"").toUpperCase()}
+function billDate(e){return (e&&(e.dueDate||e.date))||""}
+function contractNos(e){var out=[],seen={};function add(v){var d=String(v||"").replace(/[.\s]/g,"");if(/^\d{6,}$/.test(d)&&!seen[d]){seen[d]=1;out.push(d)}}
+ var id=String((e&&e.id)||""),m=id.match(/^gx_[^_]+_(.+)_(\d{8})$/i);if(m)add(m[1]);
+ var label=String((e&&e.label)||""),re=/(\d+(?:\.\d+)+|\d{6,})/g,x;while((x=re.exec(label)))add(x[1]);
+ return out}
+function autoBillDup(list,inc){if(!inc||!list)return null;
+ var id=inc.id!=null&&inc.id!==""?String(inc.id):"";
+ var rf=rfNorm(inc.rf),dt=billDate(inc),cons=contractNos(inc);
+ for(var i=0;i<list.length;i++){var e=list[i];if(!e)continue;
+  if(id&&String(e.id)===id)return e;
+  var rf2=rfNorm(e.rf),d2=billDate(e);
+  if(rf&&rf2&&rf===rf2&&dt&&d2&&dt===d2)return e;
+  if(dt&&d2&&dt===d2&&hasCommon(cons,contractNos(e)))return e}
+ return null}
+function dailyOldToDelete(names,keep){var dates=[];(names||[]).forEach(function(n){var m=/^metavivaseis_backup_(\d{4}-\d{2}-\d{2})\.json$/.exec(n);if(m)dates.push(m[1])});dates.sort();
+ var del=[];keep=keep||5;while(dates.length>keep)del.push("metavivaseis_backup_"+dates.shift()+".json");return del}
+
+var DATA_NAME="metavivaseis_data.json";
+var LATEST="metavivaseis_backup_latest.json";
+var LATEST_TMP="metavivaseis_backup_latest.tmp.json";
+var DAILY_DIR="Αντίγραφα ημερήσια";
+var DAILY_RE=/^metavivaseis_backup_(\d{4}-\d{2}-\d{2})\.json$/;
+var LOG_NAME="eisagogi_imported_log.json";
+var EIS_RE=/^eisagogi_.*\.json$/i;
+var aiOn=true,aiBusy=false,aiH=null,LS="mv_autoimport_done";
+
+function fsWrite(dir,name,text){return dir.getFileHandle(name,{create:true}).then(function(h){return h.createWritable().then(function(w){return Promise.resolve(w.write(text)).then(function(){return w.close()})})})}
+function fsRead(dir,name){return dir.getFileHandle(name).then(function(h){return h.getFile().then(function(f){return f.text()})})}
+function fsIter(dir){var it=dir.values?dir.values():(dir.entries?dir.entries():null);var L=[];if(!it)return Promise.resolve(L);
+ function nx(){return Promise.resolve(it.next()).then(function(r){if(!r||r.done)return L;var v=r.value;if(v&&v.length==2)v=v[1];if(v)L.push(v);return nx()})}
+ return nx()}
+function fsPerm(dir,mode){mode=mode||"readwrite";if(!dir||!dir.queryPermission)return Promise.resolve("granted");return Promise.resolve(dir.queryPermission({mode:mode})).catch(function(){return "prompt"})}
+
+function mergeDisk(mem,disk){if(!disk||!Array.isArray(disk.records)||typeof odMerge!="function")return mem;
+ if((disk.savedAt||0)>(mem.savedAt||0))return odMerge(disk,mem);
+ return odMerge(mem,disk)}
+function afterMerge(){if(!db.partners)db.partners=(typeof DEFP!="undefined"?DEFP.slice():[]);if(typeof migrate==="function")migrate();if(typeof gxRun==="function")gxRun();try{localStorage.setItem(KEY,JSON.stringify(db))}catch(e){}try{fillSelects();render()}catch(e){}}
+
+window.applyDiskDb=function(d){if(!d||!Array.isArray(d.records))return false;
+ if(modalOpen())return true;
+ if(db&&Array.isArray(db.records)&&db.records.length&&typeof odMerge==="function"){db=mergeDisk(db,d);afterMerge();return true}
+ return applyLinkedDb(d)};
+
+function verifyDbText(text,expect){var p=JSON.parse(text);if(!p||!Array.isArray(p.records))throw new Error("μη έγκυρο αντίγραφο");
+ if(expect){if(p.records.length!==expect.records.length)throw new Error("αριθμός εγγραφών δεν επαληθεύτηκε");
+  if((p.savedAt||0)!==(expect.savedAt||0))throw new Error("savedAt δεν επαληθεύτηκε")}
+ return p}
+
+async function refreshLatest(dir,txt){await fsWrite(dir,LATEST_TMP,txt);
+ var t=await fsRead(dir,LATEST_TMP);verifyDbText(t,db);
+ await fsWrite(dir,LATEST,txt);
+ var t2=await fsRead(dir,LATEST);verifyDbText(t2,db);
+ try{if(dir.removeEntry)await dir.removeEntry(LATEST_TMP)}catch(e){console.warn("tmp backup remove",e)}}
+
+async function dailyBackup(dir,txt){var sub=await dir.getDirectoryHandle(DAILY_DIR,{create:true});
+ var name="metavivaseis_backup_"+todayAthens()+".json";
+ await fsWrite(sub,name,txt);
+ var t=await fsRead(sub,name);verifyDbText(t);
+ var ents=await fsIter(sub),names=[];
+ for(var i=0;i<ents.length;i++){if(ents[i]&&ents[i].kind=="file"&&DAILY_RE.test(ents[i].name))names.push(ents[i].name)}
+ var del=dailyOldToDelete(names,5);
+ for(var j=0;j<del.length;j++){if(!DAILY_RE.test(del[j]))continue;try{if(sub.removeEntry)await sub.removeEntry(del[j])}catch(e){console.warn("daily rotate",del[j],e)}}}
+
+window.mvWriteLinkedDo=async function(h){try{
+  var p=await fsPerm(h,"readwrite");
+  if(p!="granted"){asStat("🔒 Αυτόματη αποθήκευση: πατήστε εδώ για άδεια",true);return}
+  var disk=null;
+  try{var raw=await fsRead(h,DATA_NAME);if(raw&&String(raw).trim()){var d=JSON.parse(raw);if(d&&Array.isArray(d.records))disk=d}}catch(e){}
+  if(disk){db=mergeDisk(db,disk);if(!db.savedAt)db.savedAt=Date.now();afterMerge()}
+  db.savedAt=Date.now();
+  try{localStorage.setItem(KEY,JSON.stringify(db))}catch(e){}
+  var txt=JSON.stringify(db,null,2);
+  await fsWrite(h,DATA_NAME,txt);
+  var back=await fsRead(h,DATA_NAME);verifyDbText(back,db);
+  await refreshLatest(h,txt);
+  await dailyBackup(h,txt);
+  asStat("✔ Αυτόματη αποθήκευση "+h.name+"\\"+DATA_NAME+" "+new Date().toLocaleTimeString("el-GR"),false);
+ }catch(e){asStat("⚠ Αποτυχία αυτόματης αποθήκευσης – τα δεδομένα μένουν στον browser (πατήστε για νέα προσπάθεια)",true);console.warn(e)}};
+
+function recIdUsed(id){id=String(id);for(var i=0;i<db.records.length;i++)if(String(db.records[i].id)===id)return true;return false}
+function newImpId(){var nid;do{nid="imp"+new Date().getTime().toString(36)+Math.random().toString(36).slice(2,8)}while(recIdUsed(nid));return nid}
+
+function applyAddOnly(inc){var R={addedRecs:[],skippedRecs:[],addedBills:[],skippedBills:[],addedAp:[],skippedAp:[]};
+ if(!inc||typeof inc!="object")return R;
+ var recs=inc.records||[];
+ for(var i=0;i<recs.length;i++){var r=recs[i];if(!r||typeof r!="object")continue;
+  if(autoRecDup(db.records,r)){R.skippedRecs.push(recLabel(r));continue}
+  var c=JSON.parse(JSON.stringify(r));
+  if(c.id==null||c.id===""||recIdUsed(c.id))c.id=newImpId();
+  db.records.push(c);R.addedRecs.push(recLabel(c));
+  if(c.partner){if(!db.partners)db.partners=[];if(db.partners.indexOf(c.partner)<0)db.partners.push(c.partner)}}
+ if(!db.generalExpenses)db.generalExpenses=[];
+ var bills=inc.generalExpenses||[];
+ for(var j=0;j<bills.length;j++){var e=bills[j];if(!e||typeof e!="object")continue;
+  var lab=(e.provider?e.provider+" ":"")+(e.label||e.rf||"λογαριασμός");
+  if(autoBillDup(db.generalExpenses,e)){R.skippedBills.push(lab);continue}
+  var ne=JSON.parse(JSON.stringify(e));
+  if(typeof gxNorm==="function")gxNorm(ne);
+  if(typeof gxStamp==="function")gxStamp(ne);
+  if(!ne.id)ne.id="gx"+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+  db.generalExpenses.push(ne);R.addedBills.push(lab)}
+ if(!Array.isArray(db.appointments))db.appointments=[];
+ var aps=inc.appointments||[];
+ for(var k=0;k<aps.length;k++){var a=aps[k];if(!a||typeof a!="object")continue;
+  var nea=typeof apNorm==="function"?apNorm(JSON.parse(JSON.stringify(a))):JSON.parse(JSON.stringify(a));
+  if(!nea.date)continue;
+  var ex=typeof apMatch==="function"?apMatch(db.appointments,nea):null;
+  var alab=[nea.client,nea.plate,nea.date,nea.time].filter(Boolean).join(" ");
+  if(ex){R.skippedAp.push(alab);continue}
+  if(nea.id==null||nea.id===""||db.appointments.some(function(x){return String(x.id)===String(nea.id)}))nea.id=typeof apId==="function"?apId():("ap"+Date.now().toString(36));
+  nea.id=String(nea.id);db.appointments.push(nea);R.addedAp.push(alab)}
+ var ps=inc.partners||[];
+ if(!db.partners)db.partners=[];
+ for(var pi=0;pi<ps.length;pi++){if(ps[pi]&&db.partners.indexOf(ps[pi])<0)db.partners.push(ps[pi])}
+ return R}
+
+function escH(s){return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")}
+function showNotice(added,skipped,unread){if(!added.length&&!skipped.length&&!unread.length)return;
+ var n=el("mvImpNote");
+ if(!n){n=document.createElement("div");n.id="mvImpNote";
+  n.style.cssText="position:fixed;left:50%;top:16px;transform:translateX(-50%);z-index:100000;background:#1f4e79;color:#fff;padding:14px 18px;border-radius:12px;max-width:min(640px,94vw);box-shadow:0 4px 16px rgba(0,0,0,.25);font-size:15px;line-height:1.45";
+  n.innerHTML='<button type="button" id="mvImpNoteX" aria-label="Κλείσιμο" style="float:right;margin:0 0 8px 12px;background:#fff;color:#1f4e79;border:0;border-radius:8px;font-weight:700;padding:2px 10px;cursor:pointer">✕</button><div id="mvImpNoteB"></div>';
+  document.body.appendChild(n);
+  el("mvImpNoteX").onclick=function(){n.style.display="none"}}
+ var h="";
+ if(added.length)h+="<p style='margin:0 0 8px'><b>Προστέθηκαν</b></p><ul style='margin:0 0 10px 18px;padding:0'>"+added.map(function(x){return "<li>"+escH(x)+"</li>"}).join("")+"</ul>";
+ if(skipped.length)h+="<p style='margin:0 0 8px'><b>Παραλείφθηκαν ως διπλότυπα</b></p><ul style='margin:0 0 10px 18px;padding:0'>"+skipped.map(function(x){return "<li>"+escH(x)+"</li>"}).join("")+"</ul>";
+ if(unread.length)h+="<p style='margin:0 0 8px'><b>Δεν διαβάστηκαν</b></p><ul style='margin:0 0 0 18px;padding:0'>"+unread.map(function(x){return "<li>"+escH(x)+"</li>"}).join("")+"</ul>";
+ el("mvImpNoteB").innerHTML=h;n.style.display="block"}
+
+function readLogObj(raw){var d;try{d=JSON.parse(raw||"")}catch(e){return {version:1,files:{}}}
+ if(!d||typeof d!="object")return {version:1,files:{}};
+ if(!d.files||typeof d.files!="object"){var files={};Object.keys(d).forEach(function(k){if(k!="version")files[k]=d[k]});d={version:1,files:files}}
+ return d}
+function lsLog(){try{return readLogObj(localStorage.getItem(LS))}catch(e){return {version:1,files:{}}}}
+function mergeLogs(a,b){var o={version:1,files:{}};[a,b].forEach(function(L){if(!L||!L.files)return;Object.keys(L.files).forEach(function(k){o.files[k]=L.files[k]})});return o}
+async function loadLog(dir){var fileL={version:1,files:{}};if(dir){try{fileL=readLogObj(await fsRead(dir,LOG_NAME))}catch(e){}}return mergeLogs(fileL,lsLog())}
+async function saveLog(dir,log){var txt=JSON.stringify(log,null,2);try{localStorage.setItem(LS,txt)}catch(e){}if(dir){try{await fsWrite(dir,LOG_NAME,txt)}catch(e){console.warn("import log write",e)}}}
+function sameSig(prev,file){if(!prev||!file)return false;return prev.size===file.size&&prev.lastModified===file.lastModified}
+
+function folderHandle(){return fh||aiH||null}
+
+function applyReport(R,fname,added,skipped){var i;
+ for(i=0;i<R.addedRecs.length;i++)added.push(R.addedRecs[i]+" — "+fname);
+ for(i=0;i<R.addedBills.length;i++)added.push("Λογαριασμός: "+R.addedBills[i]+" — "+fname);
+ for(i=0;i<R.addedAp.length;i++)added.push("Ραντεβού: "+R.addedAp[i]+" — "+fname);
+ for(i=0;i<R.skippedRecs.length;i++)skipped.push(R.skippedRecs[i]+" — "+fname);
+ for(i=0;i<R.skippedBills.length;i++)skipped.push("Λογαριασμός: "+R.skippedBills[i]+" — "+fname);
+ for(i=0;i<R.skippedAp.length;i++)skipped.push("Ραντεβού: "+R.skippedAp[i]+" — "+fname)}
+
+async function scan(){var dir=folderHandle();if(!dir||!aiOn||aiBusy||typeof db=="undefined"||!db)return;
+ aiBusy=true;
+ try{
+  var p=await fsPerm(dir,"read");
+  if(p!="granted"){p=await fsPerm(dir,"readwrite")}
+  if(p!="granted"){banner(true);return}
+  banner(false);
+  var ents=await fsIter(dir),files=[];
+  for(var i=0;i<ents.length;i++){var h=ents[i];if(h&&h.kind=="file"&&EIS_RE.test(h.name)&&h.name!==LOG_NAME&&!/_imported_log\.json$/i.test(h.name)&&!/^metavivaseis_data\.js(on)?$/i.test(h.name))files.push(h)}
+  files.sort(function(a,b){return a.name<b.name?-1:a.name>b.name?1:0});
+  var log=await loadLog(dir),added=[],skipped=[],unread=[],changed=false;
+  for(var fi=0;fi<files.length;fi++){
+   var fhnd=files[fi],f=null;
+   try{f=await fhnd.getFile()}catch(e){unread.push(fhnd.name+" (δεν ανοίγει)");continue}
+   if(sameSig(log.files[f.name],f))continue;
+   var t="";
+   try{t=typeof bkTextOf==="function"?await bkTextOf(f):await f.text();if(!t||!String(t).replace(/[\s\u0000\uFEFF]/g,"")){unread.push(f.name+" (κενό ή δεν έχει κατέβει ακόμα από το OneDrive)");continue}
+    var d=typeof bkParse==="function"?bkParse(t):JSON.parse(t);
+    if(typeof mvValid==="function"&&!mvValid(d)){unread.push(f.name+" (μη έγκυρο αρχείο)");continue}
+    var r=applyAddOnly(d);changed=true;
+    log.files[f.name]={size:f.size,lastModified:f.lastModified,importedAt:isoNow(),addedRecords:r.addedRecs.length,addedBills:r.addedBills.length,addedAppointments:r.addedAp.length,skippedRecords:r.skippedRecs.length,skippedBills:r.skippedBills.length,skippedAppointments:r.skippedAp.length};
+    applyReport(r,f.name,added,skipped);
+   }catch(e){console.warn("autoimport",f&&f.name,e);unread.push((f&&f.name||fhnd.name)+" (σφάλμα ανάγνωσης)");}
+  }
+  if(changed){if(typeof mvSafety==="function")mvSafety();if(typeof persist==="function")persist();
+   if(fh&&typeof writeLinked==="function")try{await writeLinked()}catch(e){console.warn(e)}
+   try{fillSelects();render()}catch(e){}
+   await saveLog(dir,log)}
+  showNotice(added,skipped,unread);
+ }catch(e){console.warn("autoimport scan",e)}
+ finally{aiBusy=false}}
+
+function banner(show){var b=el("aiBan");if(!show){if(b)b.remove();return}if(b)return;
+ b=document.createElement("button");b.type="button";b.id="aiBan";b.className="ok";
+ b.textContent="Άδεια φακέλου για αυτόματη εισαγωγή και αποθήκευση";
  b.style.cssText="position:fixed;left:10px;bottom:10px;z-index:9998;font-size:13px;padding:6px 12px;border-radius:14px;box-shadow:0 1px 4px rgba(0,0,0,.2)";
- b.onclick=function(){var p;try{p=aiH.requestPermission({mode:"read"})}catch(e){return}Promise.resolve(p).then(function(s){if(s=="granted"){banner(false);scan()}},function(){})};document.body.appendChild(b)}
-function applyOne(d){var g0=(db.generalExpenses||[]).length,a0=(db.appointments||[]).length,r0=db.records.length;
- var p=mvPlan(db,d);mvSafety();mvApply(d,p);migrate();persist();
- return {gx:(db.generalExpenses||[]).length-g0,ap:(db.appointments||[]).length-a0,rec:db.records.length-r0}}
-function scan(){if(!aiH||busy||typeof db=="undefined"||!db)return Promise.resolve();busy=true;
- return Promise.resolve(aiH.queryPermission?aiH.queryPermission({mode:"read"}):"granted").then(function(p){if(p!="granted"){banner(true);return}banner(false);
-  var L=[],it=aiH.values();
-  function nx(){return it.next().then(function(r){if(r.done)return;var h=r.value;if(h.kind=="file"&&RE.test(h.name)&&!/^metavivaseis_data\.js(on)?$/i.test(h.name))L.push(h);return nx()})}
-  return nx().then(function(){L.sort(function(a,b){return a.name<b.name?-1:1});var D=done(),msgs=[],ch=false;
-   return L.reduce(function(pr,h){return pr.then(function(){return h.getFile().then(function(f){var sig=f.lastModified+":"+f.size;if(D[f.name]===sig)return;
-     return bkTextOf(f).then(function(t){if(!t||!t.replace(/[\s\u0000\uFEFF]/g,""))return;var d=bkParse(t);if(!mvValid(d))return;
-      var r=applyOne(d);ch=true;D[f.name]=sig;var parts=[];if(r.gx>0)parts.push(r.gx+(r.gx==1?" λογαριασμός":" λογαριασμοί"));if(r.ap>0)parts.push(r.ap+" ραντεβού");if(r.rec>0)parts.push(r.rec+" εγγραφές");
-      if(parts.length)msgs.push("Εισήχθησαν "+parts.join(", ")+" από "+f.name)})}).catch(function(e){console.warn("autoimport",h.name,e)})})},Promise.resolve()).then(function(){
-     if(ch){try{localStorage.setItem(LS,JSON.stringify(D))}catch(e){}try{fillSelects()}catch(e){}try{render()}catch(e){}try{window.awWrite&&window.awWrite()}catch(e){}}
-     if(msgs.length)bkMsg(msgs.join(" · "),1)})})
- }).catch(function(e){console.warn("autoimport scan",e)}).then(function(){busy=false})}
-window.aiPick=function(){var p;try{p=showDirectoryPicker({id:"metavivaseis-import",mode:"read"})}catch(e){return}
- Promise.resolve(p).then(function(h){aiH=h;ui();kv("put","aiDir",h).catch(function(){});return scan()}).catch(function(e){if(e&&e.name==="AbortError")return;bkMsg("Σφάλμα επιλογής φακέλου: "+((e&&e.message)||e),0)})};
-window.aiDisable=function(){aiH=null;kv("del","aiDir").catch(function(){});banner(false);ui()};
+ b.onclick=function(){var h=folderHandle();if(!h){if(typeof linkFile==="function")linkFile();return}
+  Promise.resolve(h.requestPermission?h.requestPermission({mode:"readwrite"}):"granted").then(function(s){if(s=="granted"){banner(false);if(typeof readLinked==="function")return readLinked().then(function(){return afterReady()})}}).catch(function(){})};
+ document.body.appendChild(b)}
+
+function ui(){var n=el("aiName");if(n)n.textContent=folderHandle()?("Φάκελος: "+folderHandle().name+" — η αυτόματη εισαγωγή χρησιμοποιεί τον ίδιο φάκελο με την αποθήκευση"):"Δεν έχει συνδεθεί φάκελος (επιλέξτε τον από την αυτόματη αποθήκευση)";var o=el("aiOff");if(o)o.style.display=folderHandle()?"":"none"}
+
+async function afterReady(){ui();if(!folderHandle())return;await scan()}
+window.mvAfterFolderReady=afterReady;
+
+window.aiPick=function(){if(typeof linkFile==="function")return linkFile();
+ var p;try{p=showDirectoryPicker({id:"metavivaseis-autosave",mode:"readwrite"})}catch(e){return}
+ Promise.resolve(p).then(function(h){fh=h;ui();if(typeof idbSet==="function")idbSet("adir",h).catch(function(){});return (typeof readLinked==="function"?readLinked():Promise.resolve()).then(function(ok){if(!ok&&typeof writeLinked==="function")return writeLinked()}).then(afterReady)}).catch(function(e){if(e&&e.name==="AbortError")return;if(typeof bkMsg==="function")bkMsg("Σφάλμα επιλογής φακέλου: "+((e&&e.message)||e),0)})};
+window.aiDisable=function(){aiOn=false;banner(false);if(typeof bkMsg==="function")bkMsg("Η αυτόματη εισαγωγή απενεργοποιήθηκε σε αυτή τη συνεδρία. Η αποθήκευση στον φάκελο συνεχίζεται.",1)};
 window.aiScan=scan;
-if(!window.showDirectoryPicker||!window.indexedDB)return;
-var sm=el("sm"),card=sm&&sm.querySelector(".card");if(card){var d=document.createElement("div");d.id="aiBox";d.style.cssText="border-top:2px solid #ccd;margin-top:16px;padding-top:8px";
- d.innerHTML='<h2>Αυτόματη εισαγωγή (laptop)</h2><p style="font-size:14px;color:#555">Διάλεξε μία φορά τον φάκελο OneDrive\\Metavivaseis. Η εφαρμογή διαβάζει μόνη της τα αρχεία eisagogi_*.json (λογαριασμοί, ραντεβού) χωρίς διπλοεγγραφές. Τα αρχεία δεν αλλάζουν.</p><p id="aiName" style="font-size:14px"></p><p><button type="button" class="ok" onclick="aiPick()">Αυτόματη εισαγωγή: σύνδεση φακέλου</button> <button type="button" class="del" id="aiOff" onclick="aiDisable()">Απενεργοποίηση</button></p>';
- card.appendChild(d)}
-kv("get","aiDir").then(function(h){if(h){aiH=h;ui();scan()}else ui()}).catch(function(){ui()});
+window.mvAttachFolder=async function(h,opts){fh=h;if(opts&&opts.aiOnly){aiH=h;if(!opts.keepFh)fh=fh||h}ui();if(fh&&typeof readLinked==="function")await readLinked();await afterReady();return true};
+
+function kv(op,k,v){return new Promise(function(res,rej){try{var r=indexedDB.open("mv_autosave",1);r.onupgradeneeded=function(){r.result.createObjectStore("kv")};r.onsuccess=function(){var d=r.result,t=d.transaction("kv",op=="get"?"readonly":"readwrite"),s=t.objectStore("kv"),q=op=="get"?s.get(k):op=="del"?s.delete(k):s.put(v,k);q.onsuccess=function(){res(q.result)};q.onerror=function(){rej(q.error)}};r.onerror=function(){rej(r.error)}}catch(e){res(null)}})}
+
+if(el("sm")&&el("sm").querySelector(".card")){var card=el("sm").querySelector(".card"),d=el("aiBox");if(!d){d=document.createElement("div");d.id="aiBox";d.style.cssText="border-top:2px solid #ccd;margin-top:16px;padding-top:8px";card.appendChild(d)}
+ d.innerHTML='<h2>Αυτόματη εισαγωγή &amp; αντίγραφα</h2><p style="font-size:14px;color:#555">Χρησιμοποιεί τον ίδιο φάκελο με την αυτόματη αποθήκευση (π.χ. OneDrive\\Metavivaseis). Στο άνοιγμα διαβάζει τα αρχεία eisagogi_*.json χωρίς διπλοεγγραφές, χωρίς να τα αλλάζει ή να τα διαγράφει. Κρατά ημερήσιο αντίγραφο στον φάκελο «Αντίγραφα ημερήσια» (τελευταία 5).</p><p id="aiName" style="font-size:14px"></p><p><button type="button" class="ok" onclick="aiPick()">Σύνδεση φακέλου</button> <button type="button" class="del" id="aiOff" onclick="aiDisable()">Παύση αυτόματης εισαγωγής</button></p>'}
+
+kv("get","aiDir").then(function(h){if(h)aiH=h;ui();if(folderHandle())scan()}).catch(function(){ui()});
 setInterval(function(){scan()},5*60*1000);
 window.addEventListener("focus",function(){scan()});
+
+window.mvV36={todayAthens:todayAthens,normPlate:normPlate,normAfm:normAfm,normName:normName,chassisList:chassisList,autoRecDup:autoRecDup,rfNorm:rfNorm,billDate:billDate,contractNos:contractNos,autoBillDup:autoBillDup,dailyOldToDelete:dailyOldToDelete,applyAddOnly:applyAddOnly,mergeDisk:mergeDisk,sameSig:sameSig,readLogObj:readLogObj,mergeLogs:mergeLogs,DATA_NAME:DATA_NAME,LATEST:LATEST,LATEST_TMP:LATEST_TMP,DAILY_DIR:DAILY_DIR,LOG_NAME:LOG_NAME,scan:scan,refreshLatest:refreshLatest,dailyBackup:dailyBackup,verifyDbText:verifyDbText};
 })();
 </script>
 <div id="printDoc"></div>
