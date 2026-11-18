@@ -96,7 +96,7 @@ body.pdoc>*{display:none!important}body.pdoc>#printDoc{display:block!important}
 #printDoc{font-family:Arial,sans-serif;font-size:10.5pt;color:#000}#printDoc table{width:100%;border-collapse:collapse;display:table!important}#printDoc th,#printDoc td{display:table-cell!important;border:1px solid #999;padding:3px 5px;text-align:left;font-size:9.5pt}#printDoc tr{display:table-row!important}#printDoc thead{display:table-header-group!important}#printDoc tbody{display:table-row-group!important}#printDoc .ph{border-bottom:2px solid #000;margin-bottom:10px;padding-bottom:6px}#printDoc h2{font-size:14pt;margin:8px 0}#printDoc .kv td:first-child{width:35%;font-weight:bold}
 }
 </style></head><body>
-<header><h1>🚗 Μεταβιβάσεις Οχημάτων <small id="appVer" style="font-size:11px;font-weight:400;opacity:.6">v36</small></h1>
+<header><h1>🚗 Μεταβιβάσεις Οχημάτων <small id="appVer" style="font-size:11px;font-weight:400;opacity:.6">v37</small></h1>
 <button type="button" class="sec" id="menuBtn" onclick="this.parentNode.classList.toggle('open')">☰ Μενού</button>
 <div id="mbar"><input id="mq" type="search" placeholder="Αναζήτηση..." oninput="$('q').value=this.value;render()"><button type="button" class="sec" id="progBtnM" onclick="toggleInProgress()">Σε εξέλιξη</button><button type="button" class="sec" onclick="ccOpenSearch()">Πελάτες</button><button type="button" class="sec" onclick="document.body.classList.toggle('showf')">Φίλτρα</button><button type="button" class="ok" onclick="openForm()">+ Νέα</button></div>
 <button type="button" class="hx ok" onclick="openForm()">+ Νέα καταχώρηση</button>
@@ -1161,6 +1161,53 @@ window.addEventListener("popstate",function(){if($("xm").style.display&&$("xm").
   }
   bindBackdropClose("ccm");
   bindBackdropClose("pcm");
+})();
+</script>
+<script>/* ===== v37: εμφανής ειδοποίηση όταν ο φάκελος OneDrive δεν είναι συνδεδεμένος + επιστροφή τοπικών αλλαγών στο αρχείο ===== */
+(function(){
+var BID="mvSyncBan",askedThisLoad=false,lastBack=0,state="?";
+function g(id){return document.getElementById(id)}
+function tsOf(x){return (x&&(x.updated||x.modified||x.created||x.addedAt))||0}
+function sigMap(arr){var m={};(Array.isArray(arr)?arr:[]).forEach(function(x){if(x&&x.id!=null)m[String(x.id)]=tsOf(x)});return m}
+/* true όταν η μνήμη (browser) έχει κάτι που λείπει ή είναι νεότερο από το αρχείο */
+function localAhead(mem,disk){if(!mem||!disk)return false;
+ var ks=["records","generalExpenses","appointments"];
+ for(var i=0;i<ks.length;i++){var a=sigMap(mem[ks[i]]),b=sigMap(disk[ks[i]]);
+  for(var id in a){if(!(id in b))return true;if(a[id]>b[id])return true}}
+ var da=mem.deleted||{},dd=disk.deleted||{};for(var k in da){if(!(k in dd)||da[k]>dd[k])return true}
+ return false}
+window.mvLocalAhead=localAhead;
+function show(kind){var b=g(BID);
+ if(!b){b=document.createElement("div");b.id=BID;b.setAttribute("role","alert");
+  b.style.cssText="position:fixed;left:0;right:0;top:0;z-index:100001;background:#b00020;color:#fff;font-size:16px;font-weight:600;padding:12px 16px;text-align:center;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.3);line-height:1.4";
+  b.onclick=function(e){e.stopPropagation();grant()};document.body.appendChild(b)}
+ b.textContent=kind=="nolink"
+  ?"⚠ Η εφαρμογή δεν είναι συνδεδεμένη με τον φάκελο OneDrive\\Metavivaseis. Βλέπετε μόνο ό,τι έχει κρατήσει ο browser. Πατήστε εδώ και επιλέξτε τον φάκελο Metavivaseis."
+  :"⚠ Δεν έχει δοθεί άδεια στον φάκελο OneDrive. Βλέπετε μόνο ό,τι έχει κρατήσει ο browser και οι αλλαγές ΔΕΝ αποθηκεύονται στο αρχείο. Πατήστε εδώ και μετά «Να επιτρέπεται σε κάθε επίσκεψη».";
+ b.style.display="block";state=kind}
+function hide(){var b=g(BID);if(b)b.style.display="none";state="ok"}
+async function perm(h){if(!h||!h.queryPermission)return "granted";try{return await h.queryPermission({mode:"readwrite"})}catch(e){return "prompt"}}
+async function check(){try{if(!window.showDirectoryPicker||typeof fh=="undefined")return;
+ if(!fh){show("nolink");return}
+ var p=await perm(fh);if(p=="granted")hide();else show("perm")}catch(e){}}
+async function grant(){try{
+ if(typeof fh=="undefined")return;
+ if(!fh){if(typeof linkFile==="function")await linkFile();check();return}
+ if(typeof asGrant==="function")await asGrant();else if(fh.requestPermission)await fh.requestPermission({mode:"readwrite"});
+ check()}catch(e){console.warn("v37 grant",e)}}
+window.mvGrantFolder=grant;
+/* Με το πρώτο κλικ στη σελίδα ζητείται η άδεια (ο Chrome θέλει κλικ του χρήστη) */
+document.addEventListener("click",function(){if(askedThisLoad||state!="perm")return;askedThisLoad=true;grant()},true);
+/* Μετά από κάθε ανάγνωση του αρχείου: αν ο browser είχε νεότερες αλλαγές, γράφονται πίσω με ασφαλή συγχώνευση */
+var orig=window.applyDiskDb;
+if(typeof orig==="function"){window.applyDiskDb=function(d){var ahead=false;try{ahead=localAhead(db,d)}catch(e){}
+ var r=orig(d);
+ try{if(r&&ahead&&fh&&typeof writeLinked==="function"&&Date.now()-lastBack>30000){lastBack=Date.now();
+   perm(fh).then(function(p){if(p=="granted")setTimeout(function(){writeLinked()},800)})}}catch(e){}
+ return r}}
+setTimeout(check,1200);setTimeout(check,4000);setInterval(check,20000);
+window.addEventListener("focus",function(){setTimeout(check,300)});
+window.mvV37={localAhead:localAhead,check:check,grant:grant,state:function(){return state}};
 })();
 </script>
 </body></html>
