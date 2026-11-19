@@ -1,4 +1,4 @@
-<!DOCTYPE html><html lang="el"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="theme-color" content="#1f4e79">
+<!DOCTYPE html><html lang="el"><head><meta charset="utf-8"><script>/* v40: ο Chrome μερικές φορές δεν απαντά ποτέ στο queryPermission/requestPermission ενός αποθηκευμένου φακέλου -> η εφαρμογή «κολλούσε» σιωπηλά (κενή γραμμή κατάστασης, καμία ειδοποίηση, καμία αποθήκευση). Χρονικό όριο: θεωρείται «χωρίς άδεια». */(function(){var P=window.FileSystemHandle&&window.FileSystemHandle.prototype;if(!P)return;function wrap(name,ms){var f=P[name];if(typeof f!="function")return;P[name]=function(){var self=this,a=arguments;return Promise.race([Promise.resolve().then(function(){return f.apply(self,a)}),new Promise(function(r){setTimeout(function(){console.warn("v40: "+name+" timeout");r("prompt")},ms)})])}}wrap("queryPermission",3000);wrap("requestPermission",20000)})();window.mvLinkFolder=function(){if(typeof linkFile!=="function")return;return Promise.resolve(linkFile()).then(function(){try{window.mvV37&&mvV37.check()}catch(e){}try{window.mvV38&&mvV38.refreshPerm()}catch(e){}})};</script><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="theme-color" content="#1f4e79">
 <link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon-192.png"><title>Μεταβιβάσεις Οχημάτων</title>
 <style>
 .pgnav{display:flex;flex-wrap:wrap;gap:4px;align-items:center;margin:8px 0}.pgnav button{padding:6px 10px;min-width:38px}#xm .card{max-width:min(1400px,98vw)}#xm table{width:100%}
@@ -96,7 +96,7 @@ body.pdoc>*{display:none!important}body.pdoc>#printDoc{display:block!important}
 #printDoc{font-family:Arial,sans-serif;font-size:10.5pt;color:#000}#printDoc table{width:100%;border-collapse:collapse;display:table!important}#printDoc th,#printDoc td{display:table-cell!important;border:1px solid #999;padding:3px 5px;text-align:left;font-size:9.5pt}#printDoc tr{display:table-row!important}#printDoc thead{display:table-header-group!important}#printDoc tbody{display:table-row-group!important}#printDoc .ph{border-bottom:2px solid #000;margin-bottom:10px;padding-bottom:6px}#printDoc h2{font-size:14pt;margin:8px 0}#printDoc .kv td:first-child{width:35%;font-weight:bold}
 }
 </style></head><body>
-<header><h1>🚗 Μεταβιβάσεις Οχημάτων <small id="appVer" style="font-size:11px;font-weight:400;opacity:.6">v39</small></h1>
+<header><h1>🚗 Μεταβιβάσεις Οχημάτων <small id="appVer" style="font-size:11px;font-weight:400;opacity:.6">v40</small></h1>
 <button type="button" class="sec" id="menuBtn" onclick="this.parentNode.classList.toggle('open')">☰ Μενού</button>
 <div id="mbar"><input id="mq" type="search" placeholder="Αναζήτηση..." oninput="$('q').value=this.value;render()"><button type="button" class="sec" id="progBtnM" onclick="toggleInProgress()">Σε εξέλιξη</button><button type="button" class="sec" onclick="ccOpenSearch()">Πελάτες</button><button type="button" class="sec" onclick="document.body.classList.toggle('showf')">Φίλτρα</button><button type="button" class="ok" onclick="openForm()">+ Νέα</button></div>
 <button type="button" class="hx ok" onclick="openForm()">+ Νέα καταχώρηση</button>
@@ -111,6 +111,7 @@ body.pdoc>*{display:none!important}body.pdoc>#printDoc{display:block!important}
 <button type="button" class="hx sec" id="billsBtn" onclick="openBills()">Έξοδα &amp; Λογαριασμοί</button>
 <button type="button" class="hx sec" id="apBtn" onclick="openAppointments()">Ραντεβού</button>
 <button type="button" class="hx sec" onclick="openSettings()">Ρυθμίσεις</button>
+<button type="button" class="hx ok" id="fsLinkBtn" onclick="mvLinkFolder()" title="Επιλέξτε τον φάκελο OneDrive\Metavivaseis για αυτόματη φόρτωση και αποθήκευση">📁 Φάκελος OneDrive</button>
 
 <span id="fstat"></span>
 <input type="file" id="imp" accept=".json,application/json,text/plain,*/*" style="display:none" onchange="var inp=this;bkReadFile(inp.files&&inp.files[0],function(){setTimeout(function(){inp.value=''},0)})">
@@ -214,6 +215,7 @@ body.pdoc>*{display:none!important}body.pdoc>#printDoc{display:block!important}
 <div class="modal" id="smenu"><div class="card" style="max-width:420px"><h2>Ρυθμίσεις</h2>
 <p><button type="button" class="ok" style="width:100%;margin:4px 0" onclick="closeM('smenu');openPartners()">Συνεργάτες</button></p>
 <p><button type="button" class="ok" style="width:100%;margin:4px 0" onclick="closeM('smenu');openBonusPeriod()">Περίοδος μπόνου</button></p>
+<p><button type="button" class="ok" style="width:100%;margin:4px 0" onclick="closeM('smenu');mvLinkFolder()">📁 Σύνδεση φακέλου OneDrive</button></p>
 <p><button type="button" class="sec" onclick="closeM('smenu')">Κλείσιμο</button></p></div></div>
 <div class="modal" id="bpm"><div class="card" style="max-width:480px"><h2>Περίοδος μπόνου</h2>
 <p style="font-size:15px">Ισχύει για το Σύνολο Bonus της αρχικής σελίδας. Αν συμπληρωθούν τα πεδία «Από/Έως ημερομηνία» της κεντρικής οθόνης, υπερισχύουν εκείνα.</p>
@@ -531,7 +533,7 @@ if(ok)asStat("✔ Φόρτωση από "+h.name+"\\"+DATAF+" ("+((db.records&&d
 if(window.mvAfterFolderReady)await window.mvAfterFolderReady();
 }catch(e){if(e.name!="AbortError")alert("Σφάλμα σύνδεσης αρχείου: "+e.message)}}
 let fhQ=Promise.resolve();
-function asStat(t,perm){const s=$("fstat");if(!s)return;s.textContent=t;s.style.cursor=perm?"pointer":"";s.onclick=perm?asGrant:null;s.title=perm?"Πατήστε για να επιτραπεί η φόρτωση και η αυτόματη αποθήκευση":""}
+function asStat(t,perm){const s=$("fstat");if(!s)return;s.textContent=t;s.style.cursor=perm?"pointer":"";s.onclick=perm?function(){window.mvLinkFolder()}:null;s.title=perm?"Πατήστε για να επιτραπεί η φόρτωση και η αυτόματη αποθήκευση":""}
 async function asGrant(){try{if(fh&&(await fh.requestPermission({mode:"readwrite"}))=="granted"){const ok=await readLinked();if(!ok)await writeLinked();else asStat("✔ Φόρτωση από "+fh.name+"\\"+DATAF+" ("+((db.records&&db.records.length)||0)+" εγγραφές)",false);if(window.mvAfterFolderReady)await window.mvAfterFolderReady()}}catch(e){asStat("⚠ Αυτόματη αποθήκευση: "+(e.message||e),true)}}
 function asShow(){if(!fh){const s=$("fstat");if(!s)return;s.textContent="📁 Αυτόματη αποθήκευση: πατήστε για επιλογή φακέλου (φορτώνει το metavivaseis_data.json)";s.style.cursor="pointer";s.onclick=linkFile}}
 function applyLinkedDb(d){if(!d||!Array.isArray(d.records))return false;db=d;if(!db.partners)db.partners=DEFP.slice();migrate();gxRun();try{localStorage.setItem(KEY,JSON.stringify(db))}catch(e){}fillSelects();render();return true}
@@ -555,7 +557,7 @@ if(lastErr)console.warn("readLinked failed",lastErr);return false}
 async function tryFetchDataJson(){const urls=["./metavivaseis_data.json","metavivaseis_data.json"];
 for(const u of urls){try{const r=await fetch(u,{cache:"no-store"});if(!r.ok)continue;const d=await r.json();if((typeof window.applyDiskDb==="function"?window.applyDiskDb:applyLinkedDb)(d)){asStat("✔ Φόρτωση από "+u+" ("+d.records.length+" εγγραφές)",false);return true}}catch(e){}}
 return false}
-async function initLinked(){try{const fetched=await tryFetchDataJson();
+async function initLinked(){try{asStat("⏳ Έλεγχος φακέλου OneDrive… (αν δεν αλλάξει, πατήστε «📁 Φάκελος OneDrive»)",true);const fetched=await tryFetchDataJson();
 if(!window.indexedDB||!window.showDirectoryPicker){if(!fetched)asShow();return}
 const h=await idbGet("adir");if(!h){asShow();return}
 fh=h;asShow();let p="prompt";try{p=await h.queryPermission({mode:"readwrite"})}catch(e){}
@@ -1197,7 +1199,7 @@ window.mvLocalAhead=localAhead;
 function show(kind){var b=g(BID);
  if(!b){b=document.createElement("div");b.id=BID;b.setAttribute("role","alert");
   b.style.cssText="position:fixed;left:0;right:0;top:0;z-index:100001;background:#b00020;color:#fff;font-size:16px;font-weight:600;padding:12px 16px;text-align:center;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.3);line-height:1.4";
-  b.onclick=function(e){e.stopPropagation();grant()};document.body.appendChild(b)}
+  b.onclick=function(e){e.stopPropagation();if(window.mvLinkFolder)mvLinkFolder();else grant()};document.body.appendChild(b)}
  b.textContent=kind=="nolink"
   ?"⚠ Η εφαρμογή δεν είναι συνδεδεμένη με τον φάκελο OneDrive\\Metavivaseis. Βλέπετε μόνο ό,τι έχει κρατήσει ο browser. Πατήστε εδώ και επιλέξτε τον φάκελο Metavivaseis."
   :"⚠ Δεν έχει δοθεί άδεια στον φάκελο OneDrive. Βλέπετε μόνο ό,τι έχει κρατήσει ο browser και οι αλλαγές ΔΕΝ αποθηκεύονται στο αρχείο. Πατήστε εδώ και μετά «Να επιτρέπεται σε κάθε επίσκεψη».";
@@ -1256,7 +1258,7 @@ function status(t){if(typeof asStat==="function")asStat(t,false);else{var s=g("f
 function warn(show){var b=g("mvUnsavedBan");if(!show){if(b)b.style.display="none";return}
  if(!b){b=document.createElement("div");b.id="mvUnsavedBan";b.setAttribute("role","alert");
   b.style.cssText="position:fixed;left:0;right:0;bottom:0;z-index:100002;background:#b00020;color:#fff;font-size:16px;font-weight:700;padding:12px 16px;text-align:center;cursor:pointer;box-shadow:0 -2px 8px rgba(0,0,0,.3);line-height:1.4";
-  b.onclick=function(e){e.stopPropagation();grantAndLoad()};document.body.appendChild(b)}
+  b.onclick=function(e){e.stopPropagation();if(window.mvLinkFolder)mvLinkFolder();else grantAndLoad()};document.body.appendChild(b)}
  b.textContent="⚠ ΠΡΟΣΟΧΗ: Οι αλλαγές σας ΔΕΝ αποθηκεύτηκαν στο αρχείο OneDrive (metavivaseis_data.json). Υπάρχουν μόνο σε αυτόν τον browser και μπορεί να χαθούν. Πατήστε εδώ για άδεια στον φάκελο Metavivaseis.";
  b.style.display="block"}
 function unsaved(){try{if(!localStorage.getItem(DIRTY))localStorage.setItem(DIRTY,String(Date.now()))}catch(e){}warn(true)}
