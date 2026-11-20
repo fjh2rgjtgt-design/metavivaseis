@@ -96,7 +96,7 @@ body.pdoc>*{display:none!important}body.pdoc>#printDoc{display:block!important}
 #printDoc{font-family:Arial,sans-serif;font-size:10.5pt;color:#000}#printDoc table{width:100%;border-collapse:collapse;display:table!important}#printDoc th,#printDoc td{display:table-cell!important;border:1px solid #999;padding:3px 5px;text-align:left;font-size:9.5pt}#printDoc tr{display:table-row!important}#printDoc thead{display:table-header-group!important}#printDoc tbody{display:table-row-group!important}#printDoc .ph{border-bottom:2px solid #000;margin-bottom:10px;padding-bottom:6px}#printDoc h2{font-size:14pt;margin:8px 0}#printDoc .kv td:first-child{width:35%;font-weight:bold}
 }
 </style></head><body>
-<header><h1>🚗 Μεταβιβάσεις Οχημάτων <small id="appVer" style="font-size:11px;font-weight:400;opacity:.6">v40</small></h1>
+<header><h1>🚗 Μεταβιβάσεις Οχημάτων <small id="appVer" style="font-size:11px;font-weight:400;opacity:.6">v41</small></h1>
 <button type="button" class="sec" id="menuBtn" onclick="this.parentNode.classList.toggle('open')">☰ Μενού</button>
 <div id="mbar"><input id="mq" type="search" placeholder="Αναζήτηση..." oninput="$('q').value=this.value;render()"><button type="button" class="sec" id="progBtnM" onclick="toggleInProgress()">Σε εξέλιξη</button><button type="button" class="sec" onclick="ccOpenSearch()">Πελάτες</button><button type="button" class="sec" onclick="document.body.classList.toggle('showf')">Φίλτρα</button><button type="button" class="ok" onclick="openForm()">+ Νέα</button></div>
 <button type="button" class="hx ok" onclick="openForm()">+ Νέα καταχώρηση</button>
@@ -307,7 +307,12 @@ const DEFP=["Θαγγόπουλος","Μπιζάνης Ταταρίδης","Merc
 const LABELS={date:"Ημερομηνία",plate:"Πινακίδα",type:"Τύπος",job:"Τύπος εργασίας",partner:"Συνεργάτης",name:"Αγοραστής",afm:"ΑΦΜ",addr:"Διεύθυνση",phone:"Τηλέφωνο",amount:"Ποσό για παράβολα",bonus:"Bonus",expenses:"Έξοδα",expensesNote:"Σημείωση εξόδων",status:"Κατάσταση",notes:"Παρατηρήσεις"};
 const KEY="metavivaseis_v1";let db,cur=null,fh=null,dirH=null,usbQ=Promise.resolve(),usbT=null;
 function load(){let ls=null;try{ls=JSON.parse(localStorage.getItem(KEY))}catch(e){}const f=window.__METAV_DATA;db=(f&&f.records)?((ls&&ls.records)?Object.assign(odMerge(ls,JSON.parse(JSON.stringify(f))),{savedAt:Math.max(ls.savedAt||0,f.savedAt||0)}):JSON.parse(JSON.stringify(f))):ls;if(!db||!db.records)db={records:[],partners:DEFP.slice()};migrate();gxRun()}
-function migrate(){let ch=false;const OLD=["Θαγκόπουλος","Φαγκόπουλος"],N="Θαγγόπουλος";
+/* v41: διαγραφές συνεργατών ως «tombstones» (partnersDeleted: όνομα -> +χρόνος διαγραφής, -χρόνος επαναφοράς). Έτσι η συγχώνευση αρχείου/browser, οι εισαγωγές και τα αντίγραφα δεν τους ξαναφέρνουν. */
+function mvPdMerge(a,b){var o={};[a,b].forEach(function(m){if(!m||typeof m!="object")return;Object.keys(m).forEach(function(k){var v=+m[k]||0;if(!v)return;if(!(k in o)||Math.abs(v)>Math.abs(o[k]))o[k]=v})});return o}
+function mvPartnerFix(d){if(!d||typeof d!="object")return d;if(!Array.isArray(d.partners))return d;var pd=d.partnersDeleted;if(!pd||typeof pd!="object"||Array.isArray(pd))pd=d.partnersDeleted={};var used={};(Array.isArray(d.records)?d.records:[]).forEach(function(r){var x=r&&typeof r.partner=="string"?r.partner.trim():"";if(!x)return;var t=+r.created||0,h=Array.isArray(r.history)&&r.history.length?r.history[r.history.length-1]:null;if(h&&Array.isArray(h.changes)&&h.changes.some(function(c){return c&&c.f=="partner"}))t=Math.max(t,+r.updated||0);if(!(x in used)||t>used[x])used[x]=t});/* επαναφορά μόνο αν ο συνεργάτης μπήκε σε εγγραφή ΜΕΤΑ τη διαγραφή του */Object.keys(used).forEach(function(x){var v=+pd[x]||0;if(v>0&&used[x]>v){pd[x]=-Date.now();if(d.partners.indexOf(x)<0)d.partners.push(x)}});d.partners=d.partners.filter(function(x,i,a){return a.indexOf(x)==i&&!((+pd[x]||0)>0)});return d}
+function mvPartnerDel(name){if(!db)return;(db.partnersDeleted=db.partnersDeleted&&typeof db.partnersDeleted=="object"?db.partnersDeleted:{})[name]=Date.now()}
+function mvPartnerUndel(name){if(db&&db.partnersDeleted&&(+db.partnersDeleted[name]||0)>0)db.partnersDeleted[name]=-Date.now()}
+function migrate(){try{mvPartnerFix(db)}catch(e){console.warn("v41 partners",e)}let ch=false;const OLD=["Θαγκόπουλος","Φαγκόπουλος"],N="Θαγγόπουλος";
 if(!Array.isArray(db.generalExpenses)){db.generalExpenses=[];ch=true}if(!Array.isArray(db.appointments)){db.appointments=[];ch=true}if(!Array.isArray(db.recurring)){db.recurring=[{id:"rent",label:"Ενοίκιο",amount:270,day:28,startMonth:"2026-10",active:true}];ch=true}
 db.generalExpenses.forEach(e=>{if(e&&typeof e=="object")gxNorm(e)});if(!Array.isArray(db.providers)){db.providers=[...new Set(db.generalExpenses.map(e=>e.provider).filter(Boolean))].map(n=>({name:n,dueRule:{type:"none"},fixedAmount:""}));ch=true}if(!db.providers.some(p=>p.name=="ΕΦΚΑ")){db.providers.push({name:"ΕΦΚΑ",dueRule:{type:"lastWorking"},fixedAmount:""});ch=true}db.records.forEach(r=>{if(r.expenses===undefined)r.expenses="";if(r.expensesNote===undefined)r.expensesNote=""});
 db.partners=db.partners.map(p=>OLD.includes(p)?(ch=true,N):p).filter((p,i,a)=>a.indexOf(p)==i);
@@ -327,7 +332,7 @@ function oldDelList(){const R=oldDelRange();if(!R)return[];return db.records.fil
 function oldDelShow(){const fd=d=>d.split("-").reverse().join("/");const f=$("old_from").value,t=$("old_to").value;let L=[];if(!f||!t)$("old_info").textContent="Επίλεξε ημερομηνία Από και Έως.";else if(f>t)$("old_info").textContent="Η ημερομηνία Από πρέπει να είναι πριν ή ίδια με την Έως.";else{L=oldDelList().slice().sort((a,b)=>a.date<b.date?-1:1);$("old_info").textContent="Εγγραφές από "+fd(f)+" έως και "+fd(t)+": "+L.length+(L.length?" — θα διαγραφούν οι παρακάτω:":" — δεν υπάρχει τίποτα για διαγραφή.")}$("old_list").innerHTML=L.map(r=>"<div><b>"+esc(r.plate||"(χωρίς πινακίδα)")+"</b> – "+fd(r.date)+" – "+esc(r.name||"")+"</div>").join("");$("old_ok").style.display=L.length?"":"none"}
 function oldDelOpen(){oldDelShow();$("oldm").style.display="flex"}
 function oldDelDo(){const R=oldDelRange();const L=oldDelList();if(!R||!L.length){closeM("oldm");return}const fd=d=>d.split("-").reverse().join("/");if(!confirm("Οριστική διαγραφή "+L.length+" εγγραφών με ημερομηνία από "+fd(R.f)+" έως "+fd(R.t)+";"))return;const t=Date.now();db.deleted=db.deleted||{};L.forEach(r=>{if(r.id!=null)db.deleted[r.id]=t});db.records=db.records.filter(r=>!L.includes(r));persist();closeM("oldm");render()}
-function persist(){db.savedAt=Date.now();localStorage.setItem(KEY,JSON.stringify(db));try{if(fh)writeLinked()}catch(e){}usbSave();if(window.odSave)window.odSave()}
+function persist(){try{mvPartnerFix(db)}catch(e){}db.savedAt=Date.now();localStorage.setItem(KEY,JSON.stringify(db));try{if(fh)writeLinked()}catch(e){}usbSave();if(window.odSave)window.odSave()}
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const today=()=>{const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")};
@@ -514,8 +519,8 @@ function pickPartner(p){if(![...$("fp").options].some(o=>o.value==p))$("fp").add
 function openSettings(){$("smenu").style.display="flex"}
 function smView(v){$("pSec").style.display=v=="p"?"":"none";const g=$("gxBox");if(g)g.style.display=v=="g"?"":"none";$("sm").style.display="flex"}
 function openPartners(){smView("p");$("plist").innerHTML=db.partners.map((p,i)=>`<div style="display:flex;gap:8px;align-items:center;margin:4px 0"><span style="flex:1">${esc(p)}</span><button type="button" class="sec" data-p="${esc(p)}" onclick="closeM('sm');pcOpen(this.dataset.p)">Καρτέλα</button><button type="button" class="del" onclick="rmPartner(${i})">Αφαίρεση</button></div>`).join("");$("sm").style.display="flex"}
-function addPartner(){const p=$("newp").value.trim();if(p&&!db.partners.includes(p)){db.partners.push(p);persist();fillSelects();render()}$("newp").value="";openPartners()}
-function rmPartner(i){if(confirm("Αφαίρεση από τη λίστα; (οι παλιές καταχωρήσεις μένουν)")){db.partners.splice(i,1);persist();fillSelects();render();openPartners()}}
+function addPartner(){const p=$("newp").value.trim();if(p)mvPartnerUndel(p);if(p&&!db.partners.includes(p)){db.partners.push(p);persist();fillSelects();render()}$("newp").value="";openPartners()}
+function rmPartner(i){if(confirm("Αφαίρεση από τη λίστα; (οι παλιές καταχωρήσεις μένουν)")){mvPartnerDel(db.partners[i]);db.partners.splice(i,1);persist();fillSelects();render();openPartners()}}
 function download(name,data,type){const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([data],{type}));a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},500)}
 function saveFile(){download("metavivaseis_"+today()+".json",JSON.stringify(db,null,2),"application/json")}
 function importFile(inp){const f=inp.files[0];if(!f)return;f.text().then(t=>{const d=JSON.parse(t);if(!mvValid(d))throw 0;
@@ -628,7 +633,7 @@ function odMerge(local,remote){const del=Object.assign({},remote.deleted||{},loc
  const gx=byId("generalExpenses"),rc=byId("recurring");
  const pvk=p=>p&&(p.id!=null?"i:"+p.id:"n:"+String(p.name||"").trim().toLowerCase());const pm={},po=[];
  [remote,local].forEach(d=>(Array.isArray(d.providers)?d.providers:[]).forEach(p=>{if(!p||typeof p!="object")return;const k=pvk(p);if(!(k in pm))po.push(k);pm[k]=p}));
- return Object.assign({},remote,local,{records:recs,partners:parts,deleted:del,appointments:aps,generalExpenses:gx,recurring:rc,providers:po.map(k=>pm[k]),savedAt:Date.now()})}
+ return mvPartnerFix(Object.assign({},remote,local,{records:recs,partners:parts,partnersDeleted:mvPdMerge(remote.partnersDeleted,local.partnersDeleted),deleted:del,appointments:aps,generalExpenses:gx,recurring:rc,providers:po.map(k=>pm[k]),savedAt:Date.now()}))}
 async function odPull(){odChip("sync");const r=await odFetch(OD_URL);
  if(r.status==404){await odPush(true);return}
  if(!r.ok)throw new Error("Graph "+r.status);const meta=await r.json();
